@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>A test app that is hard on mods</title>
+<link rel="icon" href="data:,">
+<style>
+/* An app built the way real ones are: its look hangs from an attribute on the root, with a
+   selector more specific than a plain :root, and one color is set inline while it runs. */
+:root[data-theme="light"] { --bg: #ffffff; --panel: #f2f2f2; --fg: #111111; --fg-quiet: #555555; --accent: #0044cc; --on-accent: #ffffff; --line: #cccccc; --radius: 4px; color-scheme: light; }
+:root[data-theme="dark"] { --bg: #101010; --panel: #1c1c1c; --fg: #eeeeee; --fg-quiet: #aaaaaa; --accent: #88aaff; --on-accent: #000000; --line: #333333; --radius: 4px; color-scheme: dark; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 sans-serif; }
+#app .list .note.card { border: 2px solid var(--line); border-radius: var(--radius); padding: 8px; background: var(--panel); }
+nav { display: flex; flex-direction: column; }
+.keys { background: var(--panel); color: var(--fg); border: 2px solid var(--accent); border-radius: var(--radius); padding: 8px; }
+.keys button { background: var(--accent); color: var(--on-accent); border: 0; border-radius: var(--radius); font: inherit; }
+</style>
+</head>
+<body>
+<div id="app">
+  <nav data-zone="sidebar">
+    <a data-piece="inbox" href="#">Inbox</a>
+    <a data-piece="today" href="#">Today</a>
+    <a data-piece="usage" href="#">Usage</a>
+  </nav>
+  <div class="list">
+    <article class="note card" data-piece="note">A note</article>
+  </div>
+  <section class="keys" data-no-mods="keys">
+    <p id="keys-text">Keys</p>
+    <button id="keys-button" type="button">Show</button>
+  </section>
+</div>
+<script type="module">
+import { createModHost } from "../../skills/moods/runtime/index.js";
+
+// The accent the person picked in the app's own settings, set inline like many apps do.
+document.documentElement.style.setProperty("--accent", "#0066ff");
+
+const contract = {
+  contract: "1.0.0",
+  roles: { background: "--bg", surface: "--panel", text: "--fg", muted: "--fg-quiet", accent: "--accent", accentText: "--on-accent", border: "--line" },
+  variables: { "--radius": { since: "1.0.0" } },
+  pieces: { note: { since: "1.0.0" } },
+  zones: { sidebar: { since: "1.0.0", pieces: ["inbox", "today", "usage"] } },
+  noMods: ["keys"],
+};
+window.schemes = [];
+window.host = createModHost({
+  contract,
+  onScheme(scheme) {
+    window.schemes.push(scheme);
+    document.documentElement.dataset.theme = scheme ?? "light";
+  },
+});
+const FILES = { mood: "mood.json", style: "style.css", structure: "structure.json" };
+window.mod = (id, type, file, extra = {}) => ({
+  manifest: { format: 1, id, type, request: "a test", contract: "^1.0", ...extra },
+  files: { [FILES[type]]: file },
+});
+window.look = (selector, props) => {
+  const computed = getComputedStyle(document.querySelector(selector));
+  return Object.fromEntries(props.map((p) => [p, computed.getPropertyValue(p).trim()]));
+};
+window.ready = true;
+</script>
+</body>
+</html>

@@ -13,7 +13,11 @@ function compare(a, b) {
   return 0;
 }
 
-/** True when `version` falls inside `range`. An unreadable range never matches. */
+/**
+ * True when `version` falls inside `range`. An unreadable range never matches.
+ * @param {string} version
+ * @param {string} range
+ */
 export function satisfies(version, range) {
   const v = parseVersion(version);
   const r = String(range).trim();

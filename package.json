@@ -1,19 +1,20 @@
 {
   "name": "moods",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Mods for any open source app: people make the app theirs, and their mods survive every update.",
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./skills/moods/runtime/index.js",
+    "./node": "./skills/moods/runtime/node.js"
   },
   "files": [
-    "src",
-    "docs/format.md"
+    "skills/moods"
   ],
   "scripts": {
-    "test": "node --test test/plugin.test.js",
+    "test": "node --test \"test/*.test.js\"",
+    "check": "tsc -p tsconfig.json",
     "demo": "node scripts/serve.mjs",
     "brand": "node scripts/brand.mjs"
   },
@@ -23,6 +24,8 @@
   "packageManager": "pnpm@11.5.1",
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",
-    "fontkit": "2.0.4"
+    "@types/node": "24.13.6",
+    "fontkit": "2.0.4",
+    "typescript": "5.9.3"
   }
 }

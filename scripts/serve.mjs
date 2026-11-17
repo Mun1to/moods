@@ -3,21 +3,25 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const port = Number(process.env.PORT ?? 4848);
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml",
   ".png": "image/png", ".ico": "image/x-icon", ".ttf": "font/ttf", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8",
 };
-const HIDDEN = /(^|[\\/])(\.|node_modules|AGENTS\.md|BUZON\.md|CLAUDE\.md|GEMINI\.md|docs[\\/](METAS\.md|investigacion))/;
+const HIDDEN = /(^|[\\/])(\.(?!github[\\/]readme)|node_modules|AGENTS\.md|BUZON\.md|CLAUDE\.md|GEMINI\.md|docs[\\/](METAS\.md|investigacion))/;
 
-http
-  .createServer(async (req, res) => {
+/**
+ * Serves the repository on this computer only.
+ * @param {{ port?: number }} [options] port 0 picks a free one
+ * @returns {Promise<{ url: string, close: () => Promise<void> }>}
+ */
+export function startServer({ port = 4848 } = {}) {
+  const server = http.createServer(async (req, res) => {
     try {
-      let rel = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+      let rel = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname);
       if (rel === "/") {
         res.writeHead(302, { location: "/examples/demo/" });
         return res.end();
@@ -29,14 +33,31 @@ http
         return res.end("not found");
       }
       const body = await readFile(file);
-      res.writeHead(200, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream", "cache-control": "no-store" });
+      res.writeHead(200, { "content-type": TYPES[/** @type {keyof typeof TYPES} */ (path.extname(file))] ?? "application/octet-stream", "cache-control": "no-store" });
       res.end(body);
     } catch {
       res.writeHead(404);
       res.end("not found");
     }
-  })
-  .listen(port, "127.0.0.1", () => {
-    console.log(`Demo app:    http://127.0.0.1:${port}/examples/demo/`);
-    console.log(`Brand sheet: http://127.0.0.1:${port}/brand/`);
   });
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => {
+      const address = server.address();
+      const actual = typeof address === "object" && address ? address.port : port;
+      resolve({
+        url: `http://127.0.0.1:${actual}`,
+        close: () => new Promise((done) => {
+          server.closeAllConnections();
+          server.close(() => done());
+        }),
+      });
+    });
+  });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { url } = await startServer({ port: Number(process.env.PORT ?? 4848) });
+  console.log(`Demo app:    ${url}/examples/demo/`);
+  console.log(`Brand sheet: ${url}/brand/`);
+}

@@ -2,6 +2,7 @@
 // Pure functions: no DOM here, so every rule can be tested in Node.
 import { readManifest, FILE_FOR_TYPE } from "./manifest.js";
 import { checkStyle, namesInStyle } from "./gate.js";
+import { walkStyle } from "./css.js";
 import { satisfies } from "./semver.js";
 import { contrast } from "./color.js";
 
@@ -10,22 +11,39 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const NO_MODS = "[data-no-mods]";
 
 /**
- * @typedef {{ contract: string, app?: string, roles?: Record<string, string>,
- *   variables?: Record<string, { since?: string, about?: string }>, pieces?: Record<string, object>,
- *   zones?: Record<string, { pieces?: string[] }>, deprecated?: Record<string, { use: string, since?: string }>,
+ * @typedef {{ contract: string, app?: string, root?: string, roles?: Record<string, string>,
+ *   variables?: Record<string, { since?: string, about?: string }>,
+ *   pieces?: Record<string, { since?: string, about?: string }>,
+ *   zones?: Record<string, { since?: string, about?: string, pieces?: string[] }>,
+ *   deprecated?: Record<string, { use: string, since?: string }>,
  *   noMods?: string[] }} Contract
- * @typedef {{ manifest: unknown, files?: Record<string, string>, enabled?: boolean }} ModInput
- * @typedef {{ id: string, name: string, type: string, state: "applied" | "deprecated" | "broken" | "rejected" | "off",
- *   notes: string[], request?: string, css?: string }} Verdict
+ * @typedef {{ manifest: unknown, files?: Record<string, string>, enabled?: boolean, id?: string, error?: string }} ModInput
+ * @typedef {"applied" | "deprecated" | "broken" | "rejected" | "off"} State
+ * @typedef {{ id: string, name: string, type: string, state: State, notes: string[], request?: string,
+ *   scheme?: "dark" | "light", css?: string }} Verdict
+ * @typedef {{ state?: "broken" | "rejected", notes: string[], css?: string, deprecated?: boolean, scheme?: "dark" | "light" }} Compiled
  */
 
-/** @param {ModInput} mod @param {Contract} contract @returns {Verdict} */
-export function review(mod, contract) {
+/**
+ * Reviews one mod against the contract of the app.
+ * @param {ModInput} mod
+ * @param {Contract} contract
+ * @param {{ off?: boolean, scope?: boolean }} [options] `off`: the app started without mods.
+ *   `scope: false`: the window has no `@scope`, so style mods cannot be kept away from the zones without mods.
+ * @returns {Verdict}
+ */
+export function review(mod, contract, { off = false, scope = true } = {}) {
   const read = readManifest(mod.manifest);
-  if (!read.ok) return { id: guessId(mod.manifest), name: guessId(mod.manifest), type: "unknown", state: "rejected", notes: read.errors };
+  if (!read.ok) {
+    const id = guessId(mod);
+    return { id, name: id, type: "unknown", state: "rejected", notes: mod.error ? [mod.error] : read.errors };
+  }
   const m = read.manifest;
   const base = { id: m.id, name: m.name, type: m.type, request: m.request };
+  if (off) return { ...base, state: "off", notes: ["the app started with every mod off"] };
   if (mod.enabled === false) return { ...base, state: "off", notes: [] };
+  if (mod.error) return { ...base, state: "rejected", notes: [mod.error] };
+  /** @type {string[]} */
   const notes = [];
   let deprecated = false;
   if (!satisfies(contract.contract, m.contract)) {
@@ -37,26 +55,42 @@ export function review(mod, contract) {
 
   const missing = missingTouches(m.touches, contract);
   if (missing.length) return { ...base, state: "broken", notes: missing.map((n) => `the app no longer has ${n}`) };
+  if (m.type === "style" && !scope) {
+    return { ...base, state: "broken", notes: ["this window is too old for style mods: it has no @scope to keep them out of the zones without mods"] };
+  }
 
+  /** @type {Compiled} */
   let out;
   if (m.type === "mood") out = compileMood(text, contract);
   else if (m.type === "style") out = compileStyle(text, contract);
   else out = compileStructure(text, contract);
   if (out.state) return { ...base, state: out.state, notes: [...notes, ...out.notes] };
   if (out.deprecated) deprecated = true;
-  return { ...base, state: deprecated ? "deprecated" : "applied", notes: [...notes, ...out.notes], css: out.css };
+  return {
+    ...base,
+    state: deprecated ? "deprecated" : "applied",
+    notes: [...notes, ...out.notes],
+    ...(out.scheme ? { scheme: out.scheme } : {}),
+    css: out.css,
+  };
 }
 
-function guessId(manifest) {
+/** @param {ModInput} mod */
+function guessId(mod) {
   try {
-    const data = typeof manifest === "string" ? JSON.parse(manifest) : manifest;
-    return typeof data?.id === "string" ? data.id : "unknown";
+    const data = typeof mod.manifest === "string" ? JSON.parse(mod.manifest) : mod.manifest;
+    if (typeof data?.id === "string" && data.id) return data.id;
   } catch {
-    return "unknown";
+    // An unreadable manifest has no id: the folder name, when the loader gave one, is the next best.
   }
+  return mod.id ?? "unknown";
 }
 
-/** Names listed in `touches` that the contract does not know. */
+/**
+ * Names listed in `touches` that the contract does not know.
+ * @param {string[]} touches
+ * @param {Contract} contract
+ */
 function missingTouches(touches, contract) {
   return touches.filter((t) => {
     if (t.startsWith("piece:")) return !contract.pieces?.[t.slice(6)];
@@ -66,11 +100,18 @@ function missingTouches(touches, contract) {
   });
 }
 
+/** @param {string} name @param {Contract} contract */
 function knownVariable(name, contract) {
   return Boolean(contract.variables?.[name]) || Object.values(contract.roles ?? {}).includes(name) || name.startsWith("--mod-");
 }
 
-/** A mood: one color per role, written onto the app's own variables. */
+/**
+ * A mood: one color per role, written onto the app's own variables. Every value is `!important`:
+ * a mood has to win over whatever the app sets, also from a more specific selector or inline.
+ * @param {string} text the text of mood.json
+ * @param {Contract} contract
+ * @returns {Compiled}
+ */
 export function compileMood(text, contract) {
   let mood;
   try {
@@ -86,29 +127,48 @@ export function compileMood(text, contract) {
   if (bad.length) return { state: "rejected", notes: [`mood.json needs a #RRGGBB color for ${bad.join(", ")}`] };
   if (mood.scheme !== "dark" && mood.scheme !== "light") return { state: "rejected", notes: ["scheme must be dark or light"] };
   const notes = moodContrastNotes(colors);
-  const decls = ROLES.map((r) => `${roles[r]}: ${colors[r]};`).join(" ");
-  return { css: `:root { color-scheme: ${mood.scheme}; ${decls} }`, notes };
+  const decls = ROLES.map((r) => `${roles[r]}: ${colors[r]} !important;`).join(" ");
+  const root = contract.root ?? ":root";
+  const css = root === ":root"
+    ? `:root { color-scheme: ${mood.scheme} !important; ${decls} }`
+    : `:root { color-scheme: ${mood.scheme} !important; }\n${root} { ${decls} }`;
+  return { css, notes, scheme: mood.scheme };
 }
 
-/** Contrast warnings for a mood, measured with the WCAG 2.2 formula. */
+/**
+ * Contrast warnings for a mood, measured with the WCAG 2.2 formula.
+ * @param {Record<string, string>} colors
+ */
 export function moodContrastNotes(colors) {
+  /** @type {[string, string, number][]} */
   const checks = [
     ["text", "background", 4.5],
     ["muted", "background", 4.5],
     ["accentText", "accent", 4.5],
     ["accent", "background", 3],
   ];
-  return checks
-    .map(([fg, bg, min]) => [fg, bg, min, contrast(colors[fg], colors[bg])])
-    .filter(([, , min, ratio]) => ratio < min)
-    .map(([fg, bg, min, ratio]) => `${fg} on ${bg} is ${ratio.toFixed(2)}:1, under ${min}:1`);
+  /** @type {string[]} */
+  const notes = [];
+  for (const [fg, bg, min] of checks) {
+    const ratio = contrast(colors[fg], colors[bg]);
+    if (ratio < min) notes.push(`${fg} on ${bg} is ${ratio.toFixed(2)}:1, under ${min}:1`);
+  }
+  return notes;
 }
 
-/** A style: through the gate, deprecated names rewritten, scoped away from the zones without mods. */
+/**
+ * A style: through the gate, deprecated names rewritten, every declaration made `!important` (the
+ * person's choice wins over the app's own styles, also the inline ones) and the whole file scoped
+ * away from the zones without mods.
+ * @param {string} text the text of style.css
+ * @param {Contract} contract
+ * @returns {Compiled}
+ */
 export function compileStyle(text, contract) {
   const gate = checkStyle(text);
   if (!gate.ok) return { state: "rejected", notes: gate.errors };
   let css = gate.css;
+  /** @type {string[]} */
   const notes = [];
   let deprecated = false;
   for (const [old, { use }] of Object.entries(contract.deprecated ?? {})) {
@@ -128,15 +188,31 @@ export function compileStyle(text, contract) {
   if (unknown.length) {
     return { state: "broken", notes: unknown.map((n) => `${n} is not in the app's contract (own helper variables start with --mod-)`) };
   }
-  const { hoisted, rest } = splitHoisted(css);
-  // Inside @scope a selector only matches below the scope root, so `:root` would never match:
-  // it becomes `:scope`, which is the root element itself.
-  const body = rest.trim().replace(/:root(?![\w-])/g, ":scope");
-  const scoped = body ? `@scope (:root) to (${NO_MODS}) {\n${body}\n}` : "";
-  return { css: [hoisted, scoped].filter(Boolean).join("\n"), notes, deprecated };
+  const walked = walkStyle(css, { selector: toScope, declaration: important });
+  if (!walked.ok) return { state: "rejected", notes: walked.errors };
+  const root = contract.root ?? ":root";
+  const scoped = walked.css ? `@scope (${root}) to (${NO_MODS}) {\n${walked.css}\n}` : "";
+  return { css: [walked.hoisted, scoped].filter(Boolean).join("\n"), notes, deprecated };
 }
 
-/** A structure: order and hide pieces of a zone with CSS, never moving the app's DOM. */
+/**
+ * Inside `@scope` a selector only matches below the scope root, so `:root` and `html` would never
+ * match: they become `:scope`, which is the root itself.
+ * @param {string} selector
+ */
+function toScope(selector) {
+  return selector.replace(/:root(?![\w-])/g, ":scope").replace(/(^|,)\s*html(?=$|[\s,.:#[>+~])/g, "$1 :scope").trim();
+}
+
+/** @param {string} declaration */
+const important = (declaration) => (/!\s*important\s*$/i.test(declaration) ? declaration : `${declaration} !important`);
+
+/**
+ * A structure: order and hide pieces of a zone with CSS, never moving the app's DOM.
+ * @param {string} text the text of structure.json
+ * @param {Contract} contract
+ * @returns {Compiled}
+ */
 export function compileStructure(text, contract) {
   let data;
   try {
@@ -146,7 +222,9 @@ export function compileStructure(text, contract) {
   }
   const zones = data?.zones;
   if (!zones || typeof zones !== "object") return { state: "rejected", notes: ["structure.json needs zones"] };
+  /** @type {string[]} */
   const rules = [];
+  /** @type {string[]} */
   const problems = [];
   for (const [zone, spec] of Object.entries(zones)) {
     const known = contract.zones?.[zone];
@@ -155,7 +233,9 @@ export function compileStructure(text, contract) {
       continue;
     }
     const allowed = new Set(known.pieces ?? []);
+    /** @type {string[]} */
     const order = Array.isArray(spec?.order) ? spec.order : [];
+    /** @type {string[]} */
     const hidden = Array.isArray(spec?.hidden) ? spec.hidden : [];
     for (const p of [...order, ...hidden]) if (!allowed.has(p)) problems.push(`piece:${p} is not in zone:${zone}`);
     // !important: these rules are written by the plugin from the person's choice, and they have
@@ -169,31 +249,5 @@ export function compileStructure(text, contract) {
   return { css: rules.join("\n"), notes: [] };
 }
 
+/** @param {string} s */
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-/** Takes @font-face and @keyframes blocks out of the scope, where they would not work. */
-export function splitHoisted(css) {
-  const hoisted = [];
-  let rest = "";
-  let i = 0;
-  while (i < css.length) {
-    const at = /@(font-face|keyframes|-webkit-keyframes)\b/iy;
-    at.lastIndex = i;
-    if (css[i] === "@" && at.test(css)) {
-      const open = css.indexOf("{", i);
-      if (open === -1) break;
-      let depth = 0;
-      let j = open;
-      for (; j < css.length; j++) {
-        if (css[j] === "{") depth++;
-        else if (css[j] === "}" && --depth === 0) break;
-      }
-      hoisted.push(css.slice(i, j + 1).trim());
-      i = j + 1;
-      continue;
-    }
-    rest += css[i];
-    i++;
-  }
-  return { hoisted: hoisted.join("\n"), rest };
-}
