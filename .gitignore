@@ -1,0 +1,23 @@
+# The mailbox between agent sessions: short-lived and local, never history (house rule Q).
+BUZON.md
+
+# Internal workshop docs: they never travel to a public repository (house rule P).
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+FEEDBACK.md
+docs/METAS.md
+docs/investigacion/
+.agents/
+.cursor/
+.github/copilot-instructions.md
+
+# Dependencies and build output.
+node_modules/
+dist/
+.env
+.env.*
+
+# Local screenshots and browser leftovers.
+.playwright-mcp/
+.fotos/
