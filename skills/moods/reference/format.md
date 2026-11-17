@@ -71,6 +71,10 @@ All seven roles are required and every value is `#RRGGBB`. The plugin measures c
 WCAG 2.2 formula and warns when `text` or `muted` on `background`, or `accentText` on `accent`,
 falls under 4.5:1, or `accent` on `background` under 3:1.
 
+`scheme` says if the mood is `dark` or `light`. The app can put its own dark or light look under
+the mood, so what the seven colors do not paint (shadows, pictures, the zones without mods) still
+matches.
+
 ### `style`: CSS against names the app promises
 
 `style.css` changes the app through the variables and pieces of its contract:
@@ -80,12 +84,25 @@ falls under 4.5:1, or `accent` on `background` under 3:1.
 [data-piece="toolbar"] { gap: 12px; }
 ```
 
+Set variables on `:root` and select pieces with `[data-piece="name"]`. Your own helper variables
+start with `--mod-`. Any other name the contract does not have stops the mod, with the reason.
+
 It never loads anything and never runs code. The plugin refuses the whole file if it finds:
 
 - `@import`, or `url(` with anything but a `data:` URI or a `#fragment`;
 - `image-set(`, `src(`, `expression(`, `javascript:`, `behavior:` or `-moz-binding`;
+- `@property`, `@scope` or `@namespace`;
 - a backslash (CSS escapes could hide any of the above) or `</`;
+- a brace, a parenthesis, a string or a comment left open, a `}` that closes nothing, or a `url()`
+  that holds more than one plain value or one quoted string;
 - more than 256 KB.
+
+The file has to be well formed because the plugin wraps every style in a scope that keeps it out
+of the zones without mods, and a stray brace would close that scope early.
+
+A style mod wins over the app's own styles: the plugin makes each of its declarations
+`!important`, so a more specific selector or an inline style in the app does not beat it.
+`@font-face` and `@keyframes` are kept as they are, outside the scope.
 
 A style mod that uses a deprecated name still works: the plugin rewrites it to the new name and
 marks the mod `deprecated`, so the person (or their agent) can update it calmly.
@@ -124,9 +141,14 @@ version that added it:
 Versioning follows semver: adding a name is a minor version; deprecating one is a minor version
 and keeps an alias for a whole major version; removing or changing one is a major version.
 
+`root` is optional: the selector of the element that carries the app's variables, when it is not
+the root of the page (`"root": "body"`, for example). Moods are written there and styles are
+scoped from there.
+
 `noMods` lists zones no mod can reach (`data-no-mods="keys"` on their root element): the plugin
-keeps their variables at the app's own values and scopes every style mod away from them. This
-protects against accidents. A hostile style can still hide or cover things around a protected
+keeps their variables and what they inherit (color, letter, cursor) at the app's own values, and
+scopes every style mod away from them. Inside such a zone, use the variables of the contract or
+plain values. This protects against accidents. A hostile style can still hide or cover things around a protected
 zone, so what a person must never be tricked about (keys, permissions, payments) also needs to be
 checked outside the window.
 
@@ -139,6 +161,9 @@ checked outside the window.
 | `broken` | It touches a name the contract does not have. Not applied. |
 | `rejected` | Invalid file or refused by the gate. Not applied. |
 | `off` | The person turned it off. |
+
+Each state comes with notes in plain words: what was refused and why, which name is deprecated
+and what to use, or a contrast warning for a mood.
 
 The app never breaks because of a mod: a mod that fails is skipped and reported, and the person
 can always start the app with every mod off.

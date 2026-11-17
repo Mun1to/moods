@@ -1,4 +1,4 @@
-// Reading and checking `mod.json` (format 1). See docs/format.md.
+// Reading and checking `mod.json` (format 1). See reference/format.md.
 import { parseVersion } from "./semver.js";
 
 export const TYPES = ["mood", "style", "structure"];

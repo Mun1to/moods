@@ -7,9 +7,9 @@
   ],
   "mods": [
     "user-mods/rounder-corners",
-    "user-mods/bigger-text",
-    "user-mods/today-first",
+    "user-mods/sneaky-tracker",
     "user-mods/square-buttons",
-    "user-mods/sneaky-tracker"
+    "user-mods/bigger-text",
+    "user-mods/today-first"
   ]
 }

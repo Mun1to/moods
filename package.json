@@ -16,7 +16,8 @@
     "test": "node --test \"test/*.test.js\"",
     "check": "tsc -p tsconfig.json",
     "demo": "node scripts/serve.mjs",
-    "brand": "node scripts/brand.mjs"
+    "brand": "node scripts/brand.mjs",
+    "readme": "node scripts/readme.mjs"
   },
   "engines": {
     "node": ">=22"

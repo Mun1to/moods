@@ -1,0 +1,24 @@
+{
+  "contract": "1.0.0",
+  "app": "Your app",
+  "roles": {
+    "background": "--your-background-variable",
+    "surface": "--your-panel-variable",
+    "text": "--your-text-variable",
+    "muted": "--your-quiet-text-variable",
+    "accent": "--your-accent-variable",
+    "accentText": "--your-text-on-accent-variable",
+    "border": "--your-line-variable"
+  },
+  "variables": {
+    "--radius-button": { "since": "1.0.0", "about": "corner of every button" }
+  },
+  "pieces": {
+    "toolbar": { "since": "1.0.0", "about": "the bar at the top of the main window" }
+  },
+  "zones": {
+    "sidebar": { "since": "1.0.0", "pieces": ["first-piece", "second-piece"] }
+  },
+  "deprecated": {},
+  "noMods": ["keys", "way-back"]
+}
