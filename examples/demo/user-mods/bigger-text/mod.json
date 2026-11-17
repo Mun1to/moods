@@ -1,0 +1,12 @@
+{
+  "format": 1,
+  "id": "bigger-text",
+  "name": "Bigger text",
+  "type": "style",
+  "request": "I read at night: make the text of the notes bigger.",
+  "contract": "^1.1",
+  "touches": [
+    "--text-size",
+    "piece:note"
+  ]
+}

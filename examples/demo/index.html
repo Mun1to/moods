@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notebook, a demo app with mods</title>
+<meta name="description" content="A small app with the mods plugin inside: moods, style mods and structure mods, live.">
+<link rel="icon" href="../../brand/icons/icon.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: "Nunito"; src: url("../../brand/fonts/Nunito%5Bwght%5D.ttf") format("truetype"); font-weight: 200 1000; font-display: swap; }
+/* The app's own look, before any mod. Every name below is promised in contract.json. */
+:root {
+  --bg: #F3F4F7; --panel: #FFFFFF; --fg: #1B2030; --fg-quiet: #4F566B; --accent: #3557D6; --on-accent: #FFFFFF; --line: #D9DEE8;
+  --radius-button: 6px; --radius-card: 8px; --font-text: "Nunito", system-ui, sans-serif; --text-size: 16px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 650 16px/1.5 "Nunito", system-ui, sans-serif; }
+button, input { font: inherit; color: inherit; }
+.app { display: grid; grid-template-columns: 236px minmax(0, 1fr) 440px; min-height: 100vh; }
+
+/* Sidebar: a zone whose pieces a structure mod can order or hide. */
+.sidebar { padding: 26px 18px; border-right: 2px solid var(--line); background: var(--panel); }
+.app-name { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 21px; margin: 0 8px 22px; }
+.app-name svg { width: 26px; height: 26px; color: var(--accent); }
+nav[data-zone] { display: flex; flex-direction: column; gap: 4px; }
+nav[data-zone] > a { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: var(--radius-button);
+  color: var(--fg); text-decoration: none; font-weight: 750; font-size: 17px; }
+nav[data-zone] > a:hover { background: var(--bg); }
+nav[data-zone] > a span { color: var(--fg-quiet); font-weight: 700; }
+nav[data-zone] > [data-piece="usage"] { display: grid; gap: 8px; margin-top: 18px; font-size: 15px; }
+.meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.meter i { display: block; width: 42%; height: 100%; background: var(--accent); }
+
+/* Main: toolbar, notes, and the zone no mod can reach. */
+main { padding: 26px 32px 40px; display: grid; gap: 24px; align-content: start; }
+.toolbar { display: flex; align-items: center; gap: 10px; }
+.toolbar h1 { margin: 0 auto 0 0; font-weight: 900; font-size: 30px; letter-spacing: -0.01em; }
+.btn { border: 2px solid var(--line); background: var(--panel); border-radius: var(--radius-button); padding: 9px 16px; font-weight: 800; cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.note { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-card); padding: 18px 20px; display: grid; gap: 6px; align-content: start; }
+.note h2 { margin: 0; font-weight: 900; font-size: 19px; }
+.note p { margin: 0; font-family: var(--font-text); font-size: var(--text-size); font-weight: 600; }
+.note small { color: var(--fg-quiet); font-size: 14px; font-weight: 700; }
+.keys { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-card); padding: 20px 22px; display: grid; gap: 10px; }
+.keys h2 { margin: 0; font-weight: 900; font-size: 20px; }
+.keys p { margin: 0; }
+.key-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.key-row code { font: 700 16px/1 ui-monospace, Consolas, monospace; letter-spacing: 0.04em; }
+
+/* The mods panel: the app's own settings for moods and mods. */
+.panel { border-left: 2px solid var(--line); background: var(--panel); padding: 26px 26px 40px; display: grid; gap: 30px; align-content: start; }
+.panel h2 { margin: 0 0 12px; font-weight: 900; font-size: 22px; }
+.panel .lead { margin: 0; font-size: 16px; }
+.moods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.mood { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 8px; padding: 12px 4px 10px; border-radius: 8px; text-align: center; font-weight: 800; font-size: 15px; }
+.mood:hover { background: var(--bg); }
+.mood:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.mood svg { width: 54px; height: 42px; color: var(--fg); }
+.mood b { font-weight: 800; padding-bottom: 4px; border-bottom: 3px solid transparent; }
+.mood[aria-pressed="true"] b { font-weight: 900; border-bottom-color: var(--accent); }
+.mod-list { display: grid; gap: 4px; }
+.mod { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 14px 12px; margin: 0 -12px; border-radius: 8px; cursor: pointer; }
+.mod:hover { background: var(--bg); }
+.mod strong { font-weight: 900; font-size: 17px; }
+.mod q { grid-column: 1; font-size: 16px; font-weight: 650; quotes: "\201C" "\201D"; }
+.mod .state { grid-column: 1; font-size: 15px; font-weight: 650; }
+.mod .state b { font-weight: 900; }
+.switch { grid-row: 1 / span 3; grid-column: 2; align-self: center; appearance: none; width: 46px; height: 28px; border-radius: 14px; background: var(--line);
+  position: relative; cursor: pointer; transition: background-color .18s; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); transition: transform .18s; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(18px); background: var(--on-accent); }
+.switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.safe { justify-self: start; }
+.where { margin: 0; font-size: 15px; color: var(--fg-quiet); }
+
+@media (max-width: 1280px) { .app { grid-template-columns: 220px minmax(0, 1fr) 380px; } .moods { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 960px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 2px solid var(--line); padding: 18px 16px; }
+  .app-name { margin-bottom: 12px; }
+  nav[data-zone] { flex-direction: row; flex-wrap: wrap; }
+  nav[data-zone] > [data-piece="usage"] { margin-top: 0; flex-basis: 100%; }
+  main { padding: 22px 16px 28px; }
+  .panel { border-left: 0; border-top: 2px solid var(--line); padding: 22px 16px 36px; }
+  .mood svg { width: 46px; height: 36px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" data-piece="sidebar">
+    <div class="app-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6z"/><path d="M6 3v18M10 8h5M10 12h5"/></svg>Notebook</div>
+    <nav data-zone="sidebar" aria-label="Sections">
+      <a href="#" data-piece="inbox">Inbox <span>12</span></a>
+      <a href="#" data-piece="today">Today <span>4</span></a>
+      <a href="#" data-piece="projects">Projects <span>7</span></a>
+      <div data-piece="usage"><span>2.1 GB of 5 GB used</span><div class="meter"><i></i></div></div>
+    </nav>
+  </aside>
+
+  <main>
+    <div class="toolbar" data-piece="toolbar">
+      <h1>Today</h1>
+      <button class="btn" type="button">Search</button>
+      <button class="btn primary" type="button">New note</button>
+    </div>
+    <div class="notes">
+      <article class="note" data-piece="note"><h2>Groceries</h2><p>Oat milk, lemons, the good bread from the corner bakery.</p><small>9:12</small></article>
+      <article class="note" data-piece="note"><h2>Call the landlord</h2><p>Ask about the heating before Friday, and the spare key.</p><small>10:40</small></article>
+      <article class="note" data-piece="note"><h2>Talk ideas</h2><p>Open source apps people can make their own, without waiting for anyone.</p><small>12:05</small></article>
+      <article class="note" data-piece="note"><h2>Books</h2><p>Finish the second half of the one about habits. Return the library one.</p><small>Yesterday</small></article>
+      <article class="note" data-piece="note"><h2>Gym</h2><p>Legs on Tuesday, back on Thursday. Stretch more, rush less.</p><small>Yesterday</small></article>
+      <article class="note" data-piece="note"><h2>Trip</h2><p>Look at trains for the long weekend. Window seat, always.</p><small>Monday</small></article>
+      <article class="note" data-piece="note"><h2>Birthday</h2><p>Ana turns thirty on Saturday. Book the table for eight people.</p><small>Monday</small></article>
+      <article class="note" data-piece="note"><h2>Bike</h2><p>Pump the tyres and oil the chain before the weekend ride.</p><small>Sunday</small></article>
+      <article class="note" data-piece="note"><h2>Recipes</h2><p>The lentil soup from grandma, with cumin and a bay leaf.</p><small>Sunday</small></article>
+      <article class="note" data-piece="note"><h2>Plants</h2><p>Water the fern twice a week. The cactus, almost never.</p><small>Saturday</small></article>
+      <article class="note" data-piece="note"><h2>Movies</h2><p>The one with the lighthouse, and the documentary about bees.</p><small>Saturday</small></article>
+      <article class="note" data-piece="note"><h2>Taxes</h2><p>Find last year's receipts and send them before the end of the month.</p><small>Friday</small></article>
+    </div>
+    <section class="keys" data-no-mods="keys">
+      <h2>Account keys</h2>
+      <p>No mod can change this part: it keeps the app's own look whatever mood or mod is on.</p>
+      <div class="key-row"><code>Sync key  ••••  ••••  ••••  4F2A</code><button class="btn" type="button">Show</button></div>
+    </section>
+  </main>
+
+  <aside class="panel" aria-label="Moods and mods">
+    <p class="lead">A demo app with the plugin inside. Pick a mood or switch mods: everything changes except Account keys.</p>
+    <section>
+      <h2>Mood</h2>
+      <div class="moods" id="moods"></div>
+    </section>
+    <section>
+      <h2>Your mods</h2>
+      <div class="mod-list" id="mods"></div>
+    </section>
+    <button class="btn safe" type="button" id="all-off">Turn every mod off</button>
+    <p class="where">Mods live in your data folder, not inside the app, so an update never touches them.</p>
+  </aside>
+</div>
+
+<script type="module">
+import { createModHost } from "../../src/index.js";
+import { FACES, FACE_BOX, faceShapes } from "../../scripts/lib/faces.mjs";
+
+const getJson = async (url) => (await fetch(url)).json();
+const contract = await getJson("contract.json");
+const list = await getJson("mods.json");
+const FILES = { mood: "mood.json", style: "style.css", structure: "structure.json" };
+
+async function load(dir) {
+  const manifest = await (await fetch(`${dir}/mod.json`)).text();
+  const { id, type } = JSON.parse(manifest);
+  const files = {};
+  const res = FILES[type] ? await fetch(`${dir}/${FILES[type]}`) : null;
+  if (res?.ok) files[FILES[type]] = await res.text();
+  return { id, manifest, files, folder: dir.split("/").pop() };
+}
+const moods = await Promise.all(list.moods.map(load));
+const mods = await Promise.all(list.mods.map(load));
+const host = createModHost({ contract });
+
+// What this person picked, kept in their own browser; the page works the same without it.
+const KEY = "notebook-demo";
+const DEFAULT = { mood: null, on: { "rounder-corners": false } };
+let state = DEFAULT;
+try { state = { ...DEFAULT, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
+
+const notebookIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7z"/><path d="M7 3v18M11 8h4M11 12h4"/></svg>`;
+const face = (name) => `<svg viewBox="${FACE_BOX.x} ${FACE_BOX.y} ${FACE_BOX.width} ${FACE_BOX.height}" aria-hidden="true">${faceShapes(name, { ink: "currentColor", smile: "#F0603F" })}</svg>`;
+
+const STATE_WORDS = {
+  applied: "On.",
+  deprecated: "On, but it needs an update:",
+  broken: "Not applied, the app changed:",
+  rejected: "Refused:",
+  off: "Off.",
+};
+
+function render() {
+  const input = [
+    ...moods.filter((m) => m.id === state.mood).map(({ manifest, files }) => ({ manifest, files })),
+    ...mods.map(({ id, manifest, files }) => ({ manifest, files, enabled: state.on[id] !== false })),
+  ];
+  const verdicts = host.apply(input);
+  const byId = Object.fromEntries(verdicts.map((v) => [v.id, v]));
+
+  document.getElementById("moods").innerHTML =
+    `<button class="mood" type="button" data-mood="" aria-pressed="${state.mood === null}">${notebookIcon.replace("<svg", '<svg style="width:42px;height:42px"')}<b>Original</b></button>` +
+    moods.map((m) => `<button class="mood" type="button" data-mood="${m.id}" aria-pressed="${state.mood === m.id}">${face(m.id)}<b>${FACES[m.id].name}</b></button>`).join("");
+
+  document.getElementById("mods").innerHTML = mods.map((m) => {
+    const v = byId[m.id] ?? { state: "rejected", notes: ["could not be read"], name: m.id };
+    const manifest = JSON.parse(m.manifest);
+    const notes = v.notes?.length ? ` ${v.notes.join(". ")}.` : "";
+    return `<label class="mod"><strong>${manifest.name ?? m.id}</strong>` +
+      `<input class="switch" type="checkbox" role="switch" data-mod="${m.id}" ${state.on[m.id] !== false ? "checked" : ""} aria-label="${manifest.name ?? m.id}">` +
+      `<q>${manifest.request}</q><span class="state"><b>${STATE_WORDS[v.state]}</b>${notes}</span></label>`;
+  }).join("");
+}
+
+document.addEventListener("click", (event) => {
+  const mood = event.target.closest("[data-mood]");
+  if (mood) { state = { ...state, mood: mood.dataset.mood || null }; save(); render(); }
+  if (event.target.closest("#all-off")) { state = { mood: null, on: Object.fromEntries(mods.map((m) => [m.id, false])) }; save(); render(); }
+});
+document.addEventListener("change", (event) => {
+  const box = event.target.closest("[data-mod]");
+  if (box) { state = { ...state, on: { ...state.on, [box.dataset.mod]: box.checked } }; save(); render(); }
+});
+render();
+document.body.dataset.ready = "1";
+</script>
+</body>
+</html>

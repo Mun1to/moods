@@ -5,7 +5,16 @@
   "description": "Mods for any open source app: people make the app theirs, and their mods survive every update.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src",
+    "docs/format.md"
+  ],
   "scripts": {
+    "test": "node --test test/plugin.test.js",
+    "demo": "node scripts/serve.mjs",
     "brand": "node scripts/brand.mjs"
   },
   "engines": {

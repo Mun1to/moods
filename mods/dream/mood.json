@@ -1,0 +1,12 @@
+{
+  "scheme": "dark",
+  "colors": {
+    "background": "#161329",
+    "surface": "#231F40",
+    "text": "#E8E4FB",
+    "muted": "#A39CCC",
+    "accent": "#A99BFF",
+    "accentText": "#161329",
+    "border": "#3A3363"
+  }
+}

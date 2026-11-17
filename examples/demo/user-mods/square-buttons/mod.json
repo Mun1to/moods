@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "square-buttons",
+  "name": "Square buttons",
+  "type": "style",
+  "request": "Square buttons, like before.",
+  "contract": "^1.0",
+  "madeFor": "1.0.0"
+}

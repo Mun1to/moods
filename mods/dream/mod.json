@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "id": "dream",
+  "name": "Dream",
+  "type": "mood",
+  "request": "The Dream mood: sleepy eyes, little round mouth.",
+  "contract": "^1.0"
+}

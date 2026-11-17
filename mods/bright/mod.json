@@ -1,0 +1,8 @@
+{
+  "format": 1,
+  "id": "bright",
+  "name": "Bright",
+  "type": "mood",
+  "request": "The Bright mood: eyes open, big smile.",
+  "contract": "^1.0"
+}

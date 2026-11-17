@@ -1,0 +1,31 @@
+{
+  "contract": "1.1.0",
+  "app": "Notebook, the demo app",
+  "roles": {
+    "background": "--bg",
+    "surface": "--panel",
+    "text": "--fg",
+    "muted": "--fg-quiet",
+    "accent": "--accent",
+    "accentText": "--on-accent",
+    "border": "--line"
+  },
+  "variables": {
+    "--radius-button": { "since": "1.0.0", "about": "corner of every button" },
+    "--radius-card": { "since": "1.0.0", "about": "corner of every note" },
+    "--font-text": { "since": "1.0.0", "about": "the letter of the notes" },
+    "--text-size": { "since": "1.0.0", "about": "size of the text of the notes" }
+  },
+  "pieces": {
+    "toolbar": { "since": "1.0.0" },
+    "note": { "since": "1.0.0" },
+    "sidebar": { "since": "1.0.0" }
+  },
+  "zones": {
+    "sidebar": { "since": "1.1.0", "pieces": ["inbox", "today", "projects", "usage"] }
+  },
+  "deprecated": {
+    "--r-button": { "use": "--radius-button", "since": "1.1.0" }
+  },
+  "noMods": ["keys"]
+}

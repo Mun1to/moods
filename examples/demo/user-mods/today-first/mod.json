@@ -1,0 +1,11 @@
+{
+  "format": 1,
+  "id": "today-first",
+  "name": "Today first",
+  "type": "structure",
+  "request": "Put Today at the top of the sidebar and hide Usage.",
+  "contract": "^1.1",
+  "touches": [
+    "zone:sidebar"
+  ]
+}

@@ -1,0 +1,7 @@
+:root {
+  --text-size: 20px;
+}
+
+[data-piece="note"] {
+  line-height: 1.6;
+}
