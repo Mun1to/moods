@@ -188,6 +188,7 @@ export function compileStyle(text, contract) {
   if (unknown.length) {
     return { state: "broken", notes: unknown.map((n) => `${n} is not in the app's contract (own helper variables start with --mod-)`) };
   }
+  if (/data-no-mods/.test(css)) notes.push("it names a zone without mods, and no style reaches those");
   const walked = walkStyle(css, { selector: toScope, declaration: important });
   if (!walked.ok) return { state: "rejected", notes: walked.errors };
   const root = contract.root ?? ":root";

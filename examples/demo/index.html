@@ -1,92 +1,163 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Notebook, a demo app with mods</title>
-<meta name="description" content="A small app with the mods plugin inside: moods, style mods and structure mods, live.">
+<meta name="description" content="A small app with the mods plugin inside: pick a mood, switch mods on and off, or write one and see at once if it passes.">
 <link rel="icon" href="../../brand/icons/icon.svg" type="image/svg+xml">
+<script>
+// The app's own look follows the system, decided before the first paint.
+document.documentElement.dataset.theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+</script>
 <style>
 @font-face { font-family: "Nunito"; src: url("../../brand/fonts/Nunito%5Bwght%5D.ttf") format("truetype"); font-weight: 200 1000; font-display: swap; }
-/* The app's own look, before any mod. Every name below is promised in contract.json. */
-:root {
+
+/* The app's own look, light and dark. Every name below is promised in contract.json. */
+:root[data-theme="light"], .own-light {
   --bg: #F3F4F7; --panel: #FFFFFF; --fg: #1B2030; --fg-quiet: #4F566B; --accent: #3557D6; --on-accent: #FFFFFF; --line: #D9DEE8;
-  --radius-button: 6px; --radius-card: 8px; --font-text: "Nunito", system-ui, sans-serif; --text-size: 16px;
   color-scheme: light;
 }
+:root[data-theme="dark"], .own-dark {
+  --bg: #14161C; --panel: #1C1F28; --fg: #E9ECF4; --fg-quiet: #A4ABBD; --accent: #8CA2F8; --on-accent: #10131F; --line: #333848;
+  color-scheme: dark;
+}
+:root { --radius-button: 6px; --radius-card: 8px; --font-text: "Nunito", system-ui, sans-serif; --text-size: 16px; }
+
 * { box-sizing: border-box; }
+html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 650 16px/1.5 "Nunito", system-ui, sans-serif; }
-button, input { font: inherit; color: inherit; }
-.app { display: grid; grid-template-columns: 236px minmax(0, 1fr) 440px; min-height: 100vh; }
+button, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.app { display: grid; grid-template-columns: 236px minmax(0, 1fr) 440px; height: 100dvh; }
+.sidebar, main, .panel { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 
 /* Sidebar: a zone whose pieces a structure mod can order or hide. */
-.sidebar { padding: 26px 18px; border-right: 2px solid var(--line); background: var(--panel); }
-.app-name { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 21px; margin: 0 8px 22px; }
-.app-name svg { width: 26px; height: 26px; color: var(--accent); }
+.sidebar { display: flex; flex-direction: column; gap: 22px; padding: 26px 18px 18px; border-right: 2px solid var(--line); background: var(--panel); }
+.app-name { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 21px; margin: 0 8px; }
+.app-name svg { width: 26px; height: 26px; color: var(--accent); flex: none; }
 nav[data-zone] { display: flex; flex-direction: column; gap: 4px; }
-nav[data-zone] > a { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: var(--radius-button);
+nav[data-zone] > a { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-radius: var(--radius-button);
   color: var(--fg); text-decoration: none; font-weight: 750; font-size: 17px; }
 nav[data-zone] > a:hover { background: var(--bg); }
 nav[data-zone] > a span { color: var(--fg-quiet); font-weight: 700; }
-nav[data-zone] > [data-piece="usage"] { display: grid; gap: 8px; margin-top: 18px; font-size: 15px; }
+nav[data-zone] > [data-piece="usage"] { display: grid; gap: 8px; margin: 14px 12px 0; font-size: 15px; }
+.shelf { display: grid; gap: 2px; }
+.shelf h2 { margin: 0 12px 6px; font-weight: 900; font-size: 15px; }
+.shelf a { display: flex; justify-content: space-between; padding: 7px 12px; border-radius: var(--radius-button); color: var(--fg); text-decoration: none; font-weight: 700; font-size: 16px; }
+.shelf a:hover { background: var(--bg); }
+.shelf a span { color: var(--fg-quiet); }
 .meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
 .meter i { display: block; width: 42%; height: 100%; background: var(--accent); }
 
-/* Main: toolbar, notes, and the zone no mod can reach. */
-main { padding: 26px 32px 40px; display: grid; gap: 24px; align-content: start; }
+/* The part the app keeps for itself: no mod reaches it. */
+.keys { margin-top: auto; display: grid; gap: 8px; padding: 14px 14px 16px; background: var(--bg); border: 2px solid var(--line); border-radius: var(--radius-card); }
+.keys h2 { margin: 0; font-weight: 900; font-size: 17px; }
+.keys p { margin: 0; font-size: 15px; }
+.key-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.key-row code { font: 700 15px/1 ui-monospace, Consolas, monospace; letter-spacing: 0.04em; white-space: nowrap; }
+
+/* Main: the toolbar and the notes. */
+main { padding: 26px 32px 36px; display: grid; gap: 24px; align-content: start; }
 .toolbar { display: flex; align-items: center; gap: 10px; }
 .toolbar h1 { margin: 0 auto 0 0; font-weight: 900; font-size: 30px; letter-spacing: -0.01em; }
-.btn { border: 2px solid var(--line); background: var(--panel); border-radius: var(--radius-button); padding: 9px 16px; font-weight: 800; cursor: pointer; }
+.btn { border: 2px solid var(--line); background: var(--panel); border-radius: var(--radius-button); padding: 8px 15px; font-weight: 800; cursor: pointer; }
+.btn:hover { border-color: var(--fg-quiet); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.btn.small { padding: 5px 11px; font-size: 15px; }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .note { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-card); padding: 18px 20px; display: grid; gap: 6px; align-content: start; }
 .note h2 { margin: 0; font-weight: 900; font-size: 19px; }
 .note p { margin: 0; font-family: var(--font-text); font-size: var(--text-size); font-weight: 600; }
 .note small { color: var(--fg-quiet); font-size: 14px; font-weight: 700; }
-.keys { background: var(--panel); border: 2px solid var(--line); border-radius: var(--radius-card); padding: 20px 22px; display: grid; gap: 10px; }
-.keys h2 { margin: 0; font-weight: 900; font-size: 20px; }
-.keys p { margin: 0; }
-.key-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.key-row code { font: 700 16px/1 ui-monospace, Consolas, monospace; letter-spacing: 0.04em; }
 
-/* The mods panel: the app's own settings for moods and mods. */
-.panel { border-left: 2px solid var(--line); background: var(--panel); padding: 26px 26px 40px; display: grid; gap: 30px; align-content: start; }
-.panel h2 { margin: 0 0 12px; font-weight: 900; font-size: 22px; }
-.panel .lead { margin: 0; font-size: 16px; }
-.moods { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-.mood { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 8px; padding: 12px 4px 10px; border-radius: 8px; text-align: center; font-weight: 800; font-size: 15px; }
-.mood:hover { background: var(--bg); }
+/* The mods panel: the app's own screen for moods and mods. */
+.panel { border-left: 2px solid var(--line); background: var(--panel); padding: 24px 26px 36px; display: flex; flex-direction: column; gap: 20px; }
+.brand { align-self: start; display: block; color: var(--fg); line-height: 0; border-radius: 6px; }
+.brand svg { height: 34px; width: auto; display: block; }
+.lead { margin: 0; font-size: 16px; }
+.tabs { display: flex; gap: 24px; border-bottom: 2px solid var(--line); }
+.tab { all: unset; cursor: pointer; padding: 4px 0 9px; margin-bottom: -2px; font-weight: 800; font-size: 18px; border-bottom: 3px solid transparent; }
+.tab:hover { border-bottom-color: var(--line); }
+.tab[aria-selected="true"] { font-weight: 900; border-bottom-color: var(--accent); }
+.tab:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.tabs.kinds { gap: 20px; border-bottom: 0; }
+.tabs.kinds .tab { font-size: 16px; padding-bottom: 5px; }
+.view { display: grid; gap: 26px; align-content: start; }
+.view[hidden] { display: none; }
+.panel h2 { margin: 0 0 10px; font-weight: 900; font-size: 21px; }
+.notice { margin: 0; display: grid; gap: 10px; justify-items: start; font-size: 16px; }
+.notice[hidden] { display: none; }
+
+.moods { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.mood { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 7px; padding: 8px 2px; border-radius: 8px; text-align: center; font-weight: 800; font-size: 15px; }
 .mood:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.mood svg { width: 54px; height: 42px; color: var(--fg); }
-.mood b { font-weight: 800; padding-bottom: 4px; border-bottom: 3px solid transparent; }
+.mood .swatch { display: grid; place-items: center; width: 100%; max-width: 70px; aspect-ratio: 70 / 50; border-radius: 8px; border: 2px solid; transition: transform .15s; }
+.mood:hover .swatch { transform: translateY(-2px); }
+.mood .swatch svg { width: 62%; height: auto; display: block; }
+.mood .swatch.own-light, .mood .swatch.own-dark { background: var(--bg); border-color: var(--line); color: var(--accent); }
+.mood b { font-weight: 800; padding-bottom: 3px; border-bottom: 3px solid transparent; }
 .mood[aria-pressed="true"] b { font-weight: 900; border-bottom-color: var(--accent); }
-.mod-list { display: grid; gap: 4px; }
-.mod { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 14px 12px; margin: 0 -12px; border-radius: 8px; cursor: pointer; }
+
+.mod-list { display: grid; gap: 2px; }
+.mod { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 16px; padding: 12px; margin: 0 -12px; border-radius: 8px; cursor: pointer; }
 .mod:hover { background: var(--bg); }
 .mod strong { font-weight: 900; font-size: 17px; }
 .mod q { grid-column: 1; font-size: 16px; font-weight: 650; quotes: "\201C" "\201D"; }
-.mod .state { grid-column: 1; font-size: 15px; font-weight: 650; }
-.mod .state b { font-weight: 900; }
+.state { grid-column: 1; margin: 0; font-size: 15px; font-weight: 650; overflow-wrap: anywhere; }
+.state b { font-weight: 900; }
+.mod .remove { grid-column: 1; justify-self: start; margin-top: 6px; }
 .switch { grid-row: 1 / span 3; grid-column: 2; align-self: center; appearance: none; width: 46px; height: 28px; border-radius: 14px; background: var(--line);
   position: relative; cursor: pointer; transition: background-color .18s; margin: 0; }
 .switch::after { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--panel); transition: transform .18s; }
 .switch:checked { background: var(--accent); }
 .switch:checked::after { transform: translateX(18px); background: var(--on-accent); }
-.switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.safe { justify-self: start; }
-.where { margin: 0; font-size: 15px; color: var(--fg-quiet); }
+.way-back { display: grid; gap: 10px; justify-items: start; }
+.way-back p { margin: 0; font-size: 15px; }
 
-@media (max-width: 1280px) { .app { grid-template-columns: 220px minmax(0, 1fr) 380px; } .moods { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+/* Making a mod, live. */
+.field { display: grid; gap: 6px; font-weight: 800; }
+.field textarea, .code { width: 100%; border: 2px solid var(--line); border-radius: var(--radius-button); background: var(--bg); padding: 9px 12px; font-weight: 650; }
+.field textarea { display: block; resize: none; line-height: 1.4; }
+.code { display: block; min-height: 214px; resize: vertical; font: 600 15px/1.55 ui-monospace, Consolas, "Cascadia Mono", monospace; tab-size: 2; white-space: pre; overflow: auto; }
+.code[hidden], .mood-maker[hidden] { display: none; }
+.mood-maker { display: grid; gap: 14px; }
+.colors { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: center; }
+.color { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 10px; cursor: pointer; font-weight: 800; font-size: 15px; line-height: 1.25; }
+.color input { grid-row: span 2; appearance: none; width: 36px; height: 36px; padding: 0; border: 2px solid var(--line); border-radius: 50%; background: none; cursor: pointer; overflow: hidden; }
+.color input::-webkit-color-swatch-wrapper { padding: 0; }
+.color input::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.color input::-moz-color-swatch { border: 0; border-radius: 50%; }
+.color code { font: 650 14px/1.2 ui-monospace, Consolas, monospace; }
+.examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; }
+.make-foot { display: grid; gap: 12px; justify-items: start; }
+.make-foot .state { font-size: 16px; }
+details { border-top: 2px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 900; font-size: 17px; }
+details pre { margin: 10px 0 0; padding: 12px; border-radius: var(--radius-button); background: var(--bg); font: 600 14px/1.5 ui-monospace, Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.promises { display: grid; gap: 12px; margin-top: 10px; font-size: 15px; }
+.promises p { margin: 0; }
+.promises code { font: 700 14px/1.4 ui-monospace, Consolas, monospace; }
+
+body.no-panel .app { grid-template-columns: 236px minmax(0, 1fr); }
+body.no-panel .panel { display: none; }
+
+@media (max-width: 1500px) { .app { grid-template-columns: 220px minmax(0, 1fr) 400px; } body.no-panel .app { grid-template-columns: 220px minmax(0, 1fr); } }
 @media (max-width: 960px) {
-  .app { grid-template-columns: 1fr; }
-  .sidebar { border-right: 0; border-bottom: 2px solid var(--line); padding: 18px 16px; }
-  .app-name { margin-bottom: 12px; }
+  html, body { height: auto; }
+  .app, body.no-panel .app { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .sidebar, main, .panel { overflow: visible; }
+  .sidebar { border-right: 0; border-bottom: 2px solid var(--line); padding: 18px 16px; gap: 14px; }
   nav[data-zone] { flex-direction: row; flex-wrap: wrap; }
-  nav[data-zone] > [data-piece="usage"] { margin-top: 0; flex-basis: 100%; }
+  nav[data-zone] > [data-piece="usage"] { margin: 6px 12px 0; flex-basis: 100%; }
+  .shelf { display: none; }
+  /* On a phone the mods panel comes after the notes: six of them are enough to see a mod at work. */
+  .note:nth-child(n+7) { display: none; }
   main { padding: 22px 16px 28px; }
   .panel { border-left: 0; border-top: 2px solid var(--line); padding: 22px 16px 36px; }
-  .mood svg { width: 46px; height: 36px; }
 }
+@media (prefers-reduced-motion: reduce) { .mood .swatch, .switch, .switch::after { transition: none; } }
 </style>
 </head>
 <body>
@@ -99,6 +170,19 @@ main { padding: 26px 32px 40px; display: grid; gap: 24px; align-content: start; 
       <a href="#" data-piece="projects">Projects <span>7</span></a>
       <div data-piece="usage"><span>2.1 GB of 5 GB used</span><div class="meter"><i></i></div></div>
     </nav>
+    <div class="shelf">
+      <h2>Notebooks</h2>
+      <a href="#">Personal <span>18</span></a>
+      <a href="#">Work <span>31</span></a>
+      <a href="#">Recipes <span>9</span></a>
+      <a href="#">Travel <span>6</span></a>
+      <a href="#">Ideas <span>22</span></a>
+    </div>
+    <section class="keys" data-no-mods="keys">
+      <h2>Account keys</h2>
+      <p>No mod can change this part.</p>
+      <div class="key-row"><code>•••• 4F2A</code><button class="btn small" type="button">Show</button></div>
+    </section>
   </aside>
 
   <main>
@@ -120,99 +204,318 @@ main { padding: 26px 32px 40px; display: grid; gap: 24px; align-content: start; 
       <article class="note" data-piece="note"><h2>Plants</h2><p>Water the fern twice a week. The cactus, almost never.</p><small>Saturday</small></article>
       <article class="note" data-piece="note"><h2>Movies</h2><p>The one with the lighthouse, and the documentary about bees.</p><small>Saturday</small></article>
       <article class="note" data-piece="note"><h2>Taxes</h2><p>Find last year's receipts and send them before the end of the month.</p><small>Friday</small></article>
+      <article class="note" data-piece="note"><h2>Garden</h2><p>Plant the tomatoes when the cold nights are over. Basil next to them.</p><small>Friday</small></article>
+      <article class="note" data-piece="note"><h2>Podcast</h2><p>The episode about how cities sound at night. Send it to Leo.</p><small>Thursday</small></article>
+      <article class="note" data-piece="note"><h2>Guitar</h2><p>Ten minutes a day beats two hours on Sunday. New strings this week.</p><small>Thursday</small></article>
+      <article class="note" data-piece="note"><h2>Presents</h2><p>A warm scarf for mum, the big atlas for dad, socks for nobody.</p><small>Wednesday</small></article>
+      <article class="note" data-piece="note"><h2>Words</h2><p>Petrichor, the smell of rain on dry ground. Use it once this month.</p><small>Wednesday</small></article>
+      <article class="note" data-piece="note"><h2>Dentist</h2><p>Check-up on the ninth at half past four. Bring the old X-rays.</p><small>Tuesday</small></article>
+      <article class="note" data-piece="note"><h2>Coffee</h2><p>The small roaster near the station: the Ethiopian one, ground coarse.</p><small>Tuesday</small></article>
+      <article class="note" data-piece="note"><h2>Stars</h2><p>Meteor shower after midnight on Saturday. Blanket, thermos, no phone.</p><small>Last week</small></article>
     </div>
-    <section class="keys" data-no-mods="keys">
-      <h2>Account keys</h2>
-      <p>No mod can change this part: it keeps the app's own look whatever mood or mod is on.</p>
-      <div class="key-row"><code>Sync key  ••••  ••••  ••••  4F2A</code><button class="btn" type="button">Show</button></div>
-    </section>
   </main>
 
   <aside class="panel" aria-label="Moods and mods">
-    <p class="lead">A demo app with the plugin inside. Pick a mood or switch mods: everything changes except Account keys.</p>
-    <section>
-      <h2>Mood</h2>
-      <div class="moods" id="moods"></div>
-    </section>
-    <section>
-      <h2>Your mods</h2>
-      <div class="mod-list" id="mods"></div>
-    </section>
-    <button class="btn safe" type="button" id="all-off">Turn every mod off</button>
-    <p class="where">Mods live in your data folder, not inside the app, so an update never touches them.</p>
+    <a class="brand" href="../../brand/" id="brand" aria-label="moods, the brand sheet"></a>
+    <p class="lead">This is Notebook, a demo app with the plugin inside. Change it from here: all of it follows, except what the app keeps for itself.</p>
+    <p class="notice" id="safe" hidden>The app started without mods: nothing is applied until you start it normally. <a class="btn small" href="?">Start normally</a></p>
+    <div class="tabs" role="tablist" aria-label="Mods">
+      <button class="tab" role="tab" type="button" data-tab="mods" aria-selected="true">Your mods</button>
+      <button class="tab" role="tab" type="button" data-tab="make" aria-selected="false">Make one</button>
+    </div>
+
+    <div class="view" id="view-mods">
+      <section>
+        <h2>Mood</h2>
+        <div class="moods" id="moods"></div>
+      </section>
+      <section>
+        <h2>Mods</h2>
+        <div class="mod-list" id="mods"></div>
+      </section>
+      <div class="way-back" data-no-mods="way-back">
+        <button class="btn" type="button" id="all-off">Turn every mod off</button>
+        <p>Mods live in your data folder, not inside the app, so an update never touches them.</p>
+      </div>
+    </div>
+
+    <div class="view" id="view-make" hidden>
+      <div class="tabs kinds" role="tablist" aria-label="Kind of mod">
+        <button class="tab" role="tab" type="button" data-kind="style" aria-selected="true">Style</button>
+        <button class="tab" role="tab" type="button" data-kind="structure" aria-selected="false">Order</button>
+        <button class="tab" role="tab" type="button" data-kind="mood" aria-selected="false">Mood</button>
+      </div>
+      <label class="field">What do you want?<textarea id="request" rows="2" autocomplete="off" spellcheck="false"></textarea></label>
+      <textarea class="code" id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="The file of the mod"></textarea>
+      <div class="mood-maker" id="mood-maker" hidden>
+        <div class="colors" id="colors"></div>
+      </div>
+      <div class="examples" id="examples"></div>
+      <div class="make-foot">
+        <p class="state" id="draft-state" aria-live="polite"></p>
+        <button class="btn primary" type="button" id="keep">Keep it with my mods</button>
+      </div>
+      <details>
+        <summary>The files of this mod</summary>
+        <pre id="draft-files"></pre>
+      </details>
+      <details>
+        <summary>What this app promises</summary>
+        <div class="promises" id="promises"></div>
+      </details>
+    </div>
   </aside>
 </div>
 
 <script type="module">
-import { createModHost } from "../../skills/moods/runtime/index.js";
+import { createModHost, ROLES } from "../../skills/moods/runtime/index.js";
 import { FACES, FACE_BOX, faceShapes } from "../../scripts/lib/faces.mjs";
 
+const $ = (id) => document.getElementById(id);
+const esc = (text) => String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const params = new URLSearchParams(location.search);
 const getJson = async (url) => (await fetch(url)).json();
 const contract = await getJson("contract.json");
 const list = await getJson("mods.json");
 const FILES = { mood: "mood.json", style: "style.css", structure: "structure.json" };
 
 async function load(dir) {
-  const manifest = await (await fetch(`${dir}/mod.json`)).text();
-  const { id, type } = JSON.parse(manifest);
+  const manifest = JSON.parse(await (await fetch(`${dir}/mod.json`)).text());
   const files = {};
-  const res = FILES[type] ? await fetch(`${dir}/${FILES[type]}`) : null;
-  if (res?.ok) files[FILES[type]] = await res.text();
-  return { id, manifest, files, folder: dir.split("/").pop() };
+  const res = FILES[manifest.type] ? await fetch(`${dir}/${FILES[manifest.type]}`) : null;
+  if (res?.ok) files[FILES[manifest.type]] = await res.text();
+  return { id: manifest.id, manifest, files };
 }
 const moods = await Promise.all(list.moods.map(load));
-const mods = await Promise.all(list.mods.map(load));
-const host = createModHost({ contract });
+const shipped = await Promise.all(list.mods.map(load));
+const colorsOf = (id) => JSON.parse(moods.find((m) => m.id === id).files["mood.json"]);
+
+// The app's own look: dark or light with the system, or with the mood that is on.
+let moodScheme = null;
+const system = matchMedia("(prefers-color-scheme: dark)");
+const paintTheme = () => { document.documentElement.dataset.theme = moodScheme ?? (system.matches ? "dark" : "light"); };
+system.addEventListener("change", () => { paintTheme(); render(); });
+const host = createModHost({ contract, onScheme(scheme) { moodScheme = scheme; paintTheme(); } });
+
+// Examples for the "Make one" tab: some pass, some are stopped, each for a different reason.
+const EXAMPLES = {
+  style: [
+    { label: "Serif notes", request: "Square notes with a serif letter and a dashed border.",
+      file: ':root {\n  --radius-card: 0;\n  --font-text: Georgia, serif;\n}\n\n[data-piece="note"] {\n  border-style: dashed;\n}\n' },
+    { label: "A tracker", request: "Nicer buttons for the toolbar.",
+      file: '[data-piece="toolbar"] button {\n  background-image: url(https://tracker.example/pixel.png);\n}\n' },
+    { label: "A made-up name", request: "A shadow under every note.",
+      file: ":root {\n  --note-shadow: 0 8px 24px black;\n}\n" },
+    { label: "Paint the keys red", request: "Paint the account keys red.",
+      file: "[data-no-mods],\n[data-no-mods] * {\n  background: red;\n  color: white;\n}\n" },
+  ],
+  structure: [
+    { label: "Projects first", request: "Projects at the top of the sidebar, and hide Usage.",
+      file: '{\n  "zones": {\n    "sidebar": {\n      "order": ["projects", "today", "inbox"],\n      "hidden": ["usage"]\n    }\n  }\n}\n' },
+    { label: "A piece from elsewhere", request: "Hide the account keys.",
+      file: '{\n  "zones": {\n    "sidebar": {\n      "hidden": ["keys"]\n    }\n  }\n}\n' },
+  ],
+  mood: [
+    ...["calm", "focus", "dream", "bright"].map((id) => ({ label: FACES[id].name, request: `Like ${FACES[id].name}, but mine.`, mood: colorsOf(id) })),
+    { label: "Hard to read", request: "Soft gray text on a gray background.",
+      mood: { scheme: "light", colors: { background: "#D9D9DE", surface: "#E6E6EA", text: "#8C8C99", muted: "#A3A3AD", accent: "#B9B9D6", accentText: "#FFFFFF", border: "#C4C4CC" } } },
+  ],
+};
+const ROLE_WORDS = { background: "Background", surface: "Panels", text: "Text", muted: "Quiet text", accent: "Accent", accentText: "Text on accent", border: "Lines" };
+const KIND_WORDS = { style: "style", structure: "order", mood: "mood" };
 
 // What this person picked, kept in their own browser; the page works the same without it.
 const KEY = "notebook-demo";
-const DEFAULT = { mood: null, on: { "rounder-corners": false } };
-let state = DEFAULT;
-try { state = { ...DEFAULT, ...JSON.parse(localStorage.getItem(KEY) ?? "{}") }; } catch {}
+const firstDraft = () => ({
+  kind: "style",
+  style: { request: EXAMPLES.style[0].request, file: EXAMPLES.style[0].file },
+  structure: { request: EXAMPLES.structure[0].request, file: EXAMPLES.structure[0].file },
+  mood: { request: EXAMPLES.mood[0].request, mood: structuredClone(EXAMPLES.mood[0].mood) },
+});
+let state = { mood: null, on: { "rounder-corners": false }, own: [], tab: "mods", draft: firstDraft() };
+try {
+  const saved = JSON.parse(localStorage.getItem(KEY) ?? "{}");
+  state = { ...state, ...saved, draft: { ...state.draft, ...(saved.draft ?? {}) } };
+} catch {}
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} };
 
-const notebookIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7z"/><path d="M7 3v18M11 8h4M11 12h4"/></svg>`;
-const face = (name) => `<svg viewBox="${FACE_BOX.x} ${FACE_BOX.y} ${FACE_BOX.width} ${FACE_BOX.height}" aria-hidden="true">${faceShapes(name, { ink: "currentColor", smile: "#F0603F" })}</svg>`;
+// The address can set the picture too: ?mood=calm&on=bigger-text,today-first&tab=make&kind=mood
+if (params.has("mood")) state.mood = moods.some((m) => m.id === params.get("mood")) ? params.get("mood") : null;
+if (params.has("on")) {
+  const on = new Set(params.get("on").split(",").filter(Boolean));
+  state.on = Object.fromEntries([...shipped, ...state.own].map((m) => [m.id, on.has(m.id)]));
+}
+if (params.get("tab") === "make" || params.get("tab") === "mods") state.tab = params.get("tab");
+if (EXAMPLES[params.get("kind")]) state.draft.kind = params.get("kind");
+const safeStart = params.get("mods") === "off";
+document.body.classList.toggle("no-panel", params.get("panel") === "off");
 
-const STATE_WORDS = {
-  applied: "On.",
-  deprecated: "On, but it needs an update:",
-  broken: "Not applied, the app changed:",
-  rejected: "Refused:",
-  off: "Off.",
-};
+const range = `^${contract.contract.split(".").slice(0, 2).join(".")}`;
+function draftMod() {
+  const kind = state.draft.kind;
+  const part = state.draft[kind];
+  const file = kind === "mood" ? `${JSON.stringify(part.mood, null, 2)}\n` : part.file;
+  return {
+    manifest: { format: 1, id: `my-${KIND_WORDS[kind]}`, name: `My ${KIND_WORDS[kind]}`, type: kind, request: part.request.trim() || "(say what you want)", contract: range },
+    files: { [FILES[kind]]: file },
+  };
+}
 
+const notebookIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7z"/><path d="M7 3v18M11 8h4M11 12h4"/></svg>`;
+const face = (name, ink, smile) => `<svg viewBox="${FACE_BOX.x} ${FACE_BOX.y} ${FACE_BOX.width} ${FACE_BOX.height}" aria-hidden="true">${faceShapes(name, { ink, smile })}</svg>`;
+
+function words(v) {
+  const notes = v.notes?.length && v.state !== "off" ? ` ${v.notes.join(". ")}.` : "";
+  const head = {
+    applied: notes ? "On, with a warning:" : "On.",
+    deprecated: "On, but it needs an update:",
+    broken: "Not applied, the app does not have that:",
+    rejected: "Refused:",
+    off: "Off.",
+  }[v.state];
+  return `<b>${head}</b>${esc(notes)}`;
+}
+
+let draftVerdict = null;
 function render() {
+  const all = [...shipped, ...state.own];
   const input = [
     ...moods.filter((m) => m.id === state.mood).map(({ manifest, files }) => ({ manifest, files })),
-    ...mods.map(({ id, manifest, files }) => ({ manifest, files, enabled: state.on[id] !== false })),
+    ...all.map(({ id, manifest, files }) => ({ manifest, files, enabled: state.on[id] !== false })),
+    ...(state.tab === "make" ? [draftMod()] : []),
   ];
-  const verdicts = host.apply(input);
+  const verdicts = host.apply(input, { off: safeStart });
   const byId = Object.fromEntries(verdicts.map((v) => [v.id, v]));
+  draftVerdict = state.tab === "make" ? verdicts.at(-1) : null;
+  const focused = document.activeElement?.dataset?.focusKey;
 
-  document.getElementById("moods").innerHTML =
-    `<button class="mood" type="button" data-mood="" aria-pressed="${state.mood === null}">${notebookIcon.replace("<svg", '<svg style="width:42px;height:42px"')}<b>Original</b></button>` +
-    moods.map((m) => `<button class="mood" type="button" data-mood="${m.id}" aria-pressed="${state.mood === m.id}">${face(m.id)}<b>${FACES[m.id].name}</b></button>`).join("");
+  $("moods").innerHTML =
+    `<button class="mood" type="button" data-mood="" data-focus-key="mood-" aria-pressed="${state.mood === null}">` +
+    `<span class="swatch ${system.matches ? "own-dark" : "own-light"}">${notebookIcon.replace("<svg", '<svg style="width:44%"')}</span><b>Original</b></button>` +
+    moods.map((m) => {
+      const c = colorsOf(m.id).colors;
+      return `<button class="mood" type="button" data-mood="${m.id}" data-focus-key="mood-${m.id}" aria-pressed="${state.mood === m.id}">` +
+        `<span class="swatch" style="background:${c.background};border-color:${c.border}">${face(m.id, c.text, c.accent)}</span><b>${FACES[m.id].name}</b></button>`;
+    }).join("");
 
-  document.getElementById("mods").innerHTML = mods.map((m) => {
-    const v = byId[m.id] ?? { state: "rejected", notes: ["could not be read"], name: m.id };
-    const manifest = JSON.parse(m.manifest);
-    const notes = v.notes?.length ? ` ${v.notes.join(". ")}.` : "";
-    return `<label class="mod"><strong>${manifest.name ?? m.id}</strong>` +
-      `<input class="switch" type="checkbox" role="switch" data-mod="${m.id}" ${state.on[m.id] !== false ? "checked" : ""} aria-label="${manifest.name ?? m.id}">` +
-      `<q>${manifest.request}</q><span class="state"><b>${STATE_WORDS[v.state]}</b>${notes}</span></label>`;
+  $("mods").innerHTML = [...state.own].reverse().concat(shipped).map((m) => {
+    const v = byId[m.id] ?? { state: "rejected", notes: ["could not be read"] };
+    const mine = state.own.includes(m);
+    return `<label class="mod"><strong>${esc(m.manifest.name ?? m.id)}</strong>` +
+      `<input class="switch" type="checkbox" role="switch" data-mod="${esc(m.id)}" data-focus-key="mod-${esc(m.id)}" ${state.on[m.id] !== false ? "checked" : ""} aria-label="${esc(m.manifest.name ?? m.id)}">` +
+      `<q>${esc(m.manifest.request)}</q><span class="state">${words(v)}</span>` +
+      (mine ? `<button class="btn small remove" type="button" data-remove="${esc(m.id)}" data-focus-key="remove-${esc(m.id)}">Remove</button>` : "") + `</label>`;
   }).join("");
+
+  $("safe").hidden = !safeStart;
+  for (const tab of document.querySelectorAll("[data-tab]")) tab.setAttribute("aria-selected", String(tab.dataset.tab === state.tab));
+  $("view-mods").hidden = state.tab !== "mods";
+  $("view-make").hidden = state.tab !== "make";
+  if (draftVerdict) {
+    $("draft-state").innerHTML = words(draftVerdict);
+    $("keep").disabled = !(draftVerdict.state === "applied" || draftVerdict.state === "deprecated");
+    const mod = draftMod();
+    const folder = mod.manifest.id;
+    $("draft-files").textContent = `${folder}/mod.json\n${JSON.stringify(mod.manifest, null, 2)}\n\n${folder}/${FILES[mod.manifest.type]}\n${Object.values(mod.files)[0]}`;
+  }
+  if (focused) document.querySelector(`[data-focus-key="${focused}"]`)?.focus();
+}
+
+// The "Make one" form is filled once per kind, never while the person types in it.
+function fillMaker() {
+  const kind = state.draft.kind;
+  const part = state.draft[kind];
+  for (const tab of document.querySelectorAll("[data-kind]")) tab.setAttribute("aria-selected", String(tab.dataset.kind === kind));
+  $("request").value = part.request;
+  $("code").hidden = kind === "mood";
+  $("mood-maker").hidden = kind !== "mood";
+  if (kind === "mood") {
+    $("colors").innerHTML =
+      `<div class="tabs kinds" role="radiogroup" aria-label="Dark or light">` +
+      ["dark", "light"].map((sc) => `<button class="tab" role="radio" type="button" data-scheme="${sc}" data-focus-key="scheme-${sc}" aria-selected="${part.mood.scheme === sc}" aria-checked="${part.mood.scheme === sc}">${sc === "dark" ? "Dark" : "Light"}</button>`).join("") +
+      `</div>` + ROLES.map((role) =>
+      `<label class="color"><input type="color" data-role="${role}" value="${esc(part.mood.colors[role])}">${ROLE_WORDS[role]}<code>${esc(part.mood.colors[role])}</code></label>`).join("");
+  } else {
+    $("code").value = part.file;
+    $("code").setAttribute("aria-label", kind === "style" ? "style.css, the file of this mod" : "structure.json, the file of this mod");
+  }
+  $("examples").innerHTML = "Examples" + EXAMPLES[kind].map((e, i) => `<button class="btn small" type="button" data-example="${i}">${esc(e.label)}</button>`).join("");
+}
+
+function fillPromises() {
+  const line = (title, items) => items.length ? `<p><b>${title}</b> ${items.join(", ")}.</p>` : "";
+  $("promises").innerHTML =
+    line("Variables a style can set:", Object.entries(contract.variables).map(([name, v]) => `<code>${esc(name)}</code> (${esc(v.about)})`)) +
+    line("Pieces a style can select:", Object.keys(contract.pieces).map((p) => `<code>[data-piece="${esc(p)}"]</code>`)) +
+    line("Zones an order can arrange:", Object.entries(contract.zones).map(([z, v]) => `<code>${esc(z)}</code> with ${v.pieces.map((p) => `<code>${esc(p)}</code>`).join(", ")}`)) +
+    line("Colors a mood paints:", ROLES.map((r) => `<code>${esc(r)}</code>`)) +
+    line("Out of reach for every mod:", contract.noMods.map((z) => `<code>${esc(z)}</code>`)) +
+    `<p>This is the app's <a href="contract.json">contract.json</a>, version ${esc(contract.contract)}. A mod that uses any other name is stopped, with the reason.</p>`;
 }
 
 document.addEventListener("click", (event) => {
-  const mood = event.target.closest("[data-mood]");
-  if (mood) { state = { ...state, mood: mood.dataset.mood || null }; save(); render(); }
-  if (event.target.closest("#all-off")) { state = { mood: null, on: Object.fromEntries(mods.map((m) => [m.id, false])) }; save(); render(); }
+  const el = (selector) => event.target.closest(selector);
+  const mood = el("[data-mood]");
+  const tab = el("[data-tab]");
+  const kind = el("[data-kind]");
+  const scheme = el("[data-scheme]");
+  const example = el("[data-example]");
+  const remove = el("[data-remove]");
+  if (mood) state = { ...state, mood: mood.dataset.mood || null };
+  else if (tab) state = { ...state, tab: tab.dataset.tab };
+  else if (kind) { state.draft.kind = kind.dataset.kind; fillMaker(); }
+  else if (scheme) { state.draft.mood.mood.scheme = scheme.dataset.scheme; fillMaker(); }
+  else if (example) {
+    const picked = EXAMPLES[state.draft.kind][Number(example.dataset.example)];
+    state.draft[state.draft.kind] = picked.mood ? { request: picked.request, mood: structuredClone(picked.mood) } : { request: picked.request, file: picked.file };
+    fillMaker();
+  } else if (remove) {
+    event.preventDefault();
+    state = { ...state, own: state.own.filter((m) => m.id !== remove.dataset.remove) };
+  } else if (el("#all-off")) state = { ...state, mood: null, on: Object.fromEntries([...shipped, ...state.own].map((m) => [m.id, false])) };
+  else if (el("#keep")) {
+    const mod = draftMod();
+    let n = 1;
+    while ([...shipped, ...state.own].some((m) => m.id === `${mod.manifest.id}-${n}`)) n++;
+    mod.manifest = { ...mod.manifest, id: `${mod.manifest.id}-${n}`, name: n > 1 ? `${mod.manifest.name} ${n}` : mod.manifest.name };
+    state = { ...state, own: [...state.own, { id: mod.manifest.id, ...mod }], on: { ...state.on, [mod.manifest.id]: true }, tab: "mods" };
+  } else return;
+  save();
+  render();
 });
 document.addEventListener("change", (event) => {
   const box = event.target.closest("[data-mod]");
-  if (box) { state = { ...state, on: { ...state.on, [box.dataset.mod]: box.checked } }; save(); render(); }
+  if (!box) return;
+  state = { ...state, on: { ...state.on, [box.dataset.mod]: box.checked } };
+  save();
+  render();
 });
+document.addEventListener("input", (event) => {
+  const part = state.draft[state.draft.kind];
+  if (event.target.id === "request") part.request = event.target.value;
+  else if (event.target.id === "code") part.file = event.target.value;
+  else if (event.target.dataset.role) {
+    part.mood.colors[event.target.dataset.role] = event.target.value.toUpperCase();
+    event.target.parentElement.querySelector("code").textContent = event.target.value.toUpperCase();
+  } else return;
+  save();
+  render();
+});
+// Tab writes two spaces in the editor instead of leaving it.
+$("code").addEventListener("keydown", (event) => {
+  if (event.key !== "Tab" || event.shiftKey || event.ctrlKey || event.altKey) return;
+  event.preventDefault();
+  event.target.setRangeText("  ", event.target.selectionStart, event.target.selectionEnd, "end");
+  event.target.dispatchEvent(new Event("input", { bubbles: true }));
+});
+
+// The wordmark, drawn in the color of the text so it follows every mood.
+fetch("../../brand/wordmark/wordmark.svg").then((r) => r.text()).then((svg) => {
+  $("brand").innerHTML = svg.replace(/<title>.*?<\/title>/, "").replaceAll("#1E1B24", "currentColor");
+}).catch(() => { $("brand").textContent = "moods"; });
+
+fillMaker();
+fillPromises();
 render();
 document.body.dataset.ready = "1";
 </script>

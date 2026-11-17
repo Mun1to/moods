@@ -27,5 +27,5 @@
   "deprecated": {
     "--r-button": { "use": "--radius-button", "since": "1.1.0" }
   },
-  "noMods": ["keys"]
+  "noMods": ["keys", "way-back"]
 }
