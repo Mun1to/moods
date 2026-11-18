@@ -17,9 +17,9 @@ MIT license · No dependencies · Works in any web window: Tauri, Electron, pywe
 
 </div>
 
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/demo-dark.png"><img src=".github/readme/demo-light.png" alt="The demo app with a mood on, its mods listed with their state in words, and the account keys no mod can change"></picture></p>
+<p align="center"><img src=".github/readme/video.webp" alt="A 35-second video. Someone wants your app their way, so they fork it. With Moods they pick a mood, switch on a style mod and one that reorders the app, and turn it all off with one button, and their mods live outside the app. You add it with one command, two lines and one tag."></p>
 
-<p align="center">The demo app with the plugin inside: a mood on, every mod with its state in words, and the account keys that no mod can change.</p>
+<p align="center">Moods in 35 seconds. The app in the video is the <a href="examples/quickstart/">quickstart example</a> of this repository, and every click in it is real.</p>
 
 ## How it works
 
@@ -69,6 +69,10 @@ the apps stopped being developed, so their forks cannot fall behind and are left
 </details>
 
 ## What it does
+
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset=".github/readme/demo-dark.png"><img src=".github/readme/demo-light.png" alt="The demo app with a mood on, its mods listed with their state in words, and the account keys no mod can change"></picture></p>
+
+<p align="center">The demo app with the plugin inside: a mood on, every mod with its state in words, and the account keys that no mod can change.</p>
 
 | | |
 |---|---|

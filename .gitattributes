@@ -2,5 +2,10 @@
 * text=auto eol=lf
 
 *.png binary
+*.webp binary
 *.ico binary
 *.ttf binary
+
+# The video of the README is four megabytes that no app needs: it stays out of the archive
+# that `npx github:Mun1to/moods` downloads.
+.github/readme/video.webp export-ignore
