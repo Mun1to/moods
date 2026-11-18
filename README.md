@@ -7,13 +7,13 @@
 
 **Mods for any open source app. They survive every update.**
 
-Put the plugin in your app and the people who use it can change how it looks and how it is laid
-out, by hand or by asking their coding agent, without forking it and without waiting for a pull
-request to be merged.
+Put the plugin in your app with one command. The people who use it change how it looks and how it
+is laid out, by hand or by asking their coding agent, and they keep getting your updates: no fork,
+and no pull request waiting to be merged.
 
 MIT license · No dependencies · Works in any web window: Tauri, Electron, pywebview, an extension or a web app
 
-[How it works](#how-it-works) · [Add it to your app](#add-it-to-your-app) · [Make a mod](#make-a-mod) · [The mod format](skills/moods/reference/format.md) · [The agent skill](skills/moods/SKILL.md)
+[Why](#why) · [Add it to your app](#add-it-to-your-app) · [Make a mod](#make-a-mod) · [The mod format](skills/moods/reference/format.md) · [The agent skill](skills/moods/SKILL.md)
 
 </div>
 
@@ -30,6 +30,43 @@ MIT license · No dependencies · Works in any web window: Tauri, Electron, pywe
 <img src=".github/readme/how-it-works-light.svg" alt="Add the plugin: the app promises the names it will keep. Ask for a mod: by hand or through your coding agent. The gate checks it: a mod never loads anything or runs code. Update, mods stay: mods live outside the install folder.">
 </picture></p>
 
+## Why
+
+People change the apps they use. When an app has no place for that, the change goes into a copy of
+its code, and the copy stops getting updates.
+
+This is what 674 forks of 11 open source apps did with their copy (the forks that kept changes of
+their own on their main branch, measured in November 2026 with the tool below):
+
+- **65% changed the interface**: its screens or its styles.
+- **Half were 126 commits or more behind** the app, counting the nine apps still in development.
+- 4% changed only the interface. The rest changed logic too, and mods do not cover logic yet.
+
+Coding agents make that first step easier than ever: ask one for "a darker theme" inside a
+repository and it edits the source. An app with this plugin tells the agent, in its `AGENTS.md`,
+to write a mod instead.
+
+Measure your own app. It also lists the style files and the variables your forks changed most,
+which is what your contract should offer first:
+
+```sh
+npx github:Mun1to/moods forks owner/repo
+```
+
+<details>
+<summary><b>How the forks were counted</b></summary>
+
+The apps: Actual, Chatbot UI, Excalidraw, Handy, Homepage, LibreChat, Linkwarden, Maybe, Memos,
+Open WebUI and Uptime Kuma. For each one, [`forks.mjs`](skills/moods/scripts/forks.mjs) took the
+150 newest forks that pushed something after they were made, compared the main branch of each with
+the app, and kept the ones that were ahead. A fork made to send a pull request works on a branch
+and leaves its main branch alone, so it is not in the count. Files are sorted by their name: styles,
+images and fonts are how it looks; screens (`.tsx`, `.vue`, `.svelte`, `.html`) are the interface;
+docs and translations are words; build and deploy files are setup; everything else is logic. Two of
+the apps stopped being developed, so their forks cannot fall behind and are left out of that number.
+
+</details>
+
 ## What it does
 
 | | |
@@ -41,6 +78,8 @@ MIT license · No dependencies · Works in any web window: Tauri, Electron, pywe
 | **Mods win** | A mod beats the app's own styles, also the inline ones, so it works the same in every app. |
 | **Survives updates** | Mods live in the person's data folder, never in the install folder, and are checked against the app's contract on every start. When the app changes, a mod says so instead of breaking quietly. |
 | **A way back** | Every mod can be turned off at once, and the app can start with all of them off. |
+| **The panel** | `<moods-panel>`, one tag: the moods, every mod with its switch, why one does not apply in words, and the button that turns them all off. |
+| **A note for agents** | A few lines in the app's `AGENTS.md`: asked to change the app for one person, a coding agent writes a mod instead of editing the source. |
 
 ## Four moods to start with
 
@@ -100,27 +139,52 @@ The three kinds, the contract of an app and every rule are in
 
 ## Add it to your app
 
-The plugin is a folder of plain JavaScript modules: no dependencies and no build step.
+One command, from the folder of your app:
 
-1. Copy [`skills/moods/runtime`](skills/moods/runtime) into your app.
-2. Write a `contract.json` with the names you promise to keep: the variables people may change,
-   the seven color roles, the pieces (`data-piece`), the zones (`data-zone`) and what no mod may
-   touch (`data-no-mods`). [The demo's contract](examples/demo/contract.json) is a full example.
-3. Read the mods from the person's data folder and apply them after the first render:
-
-```js
-import { createModHost } from "./runtime/index.js";
-
-const host = createModHost({ contract });   // your contract.json
-const verdicts = host.apply(mods);          // [{ id, state, notes }], it never throws because of a mod
+```sh
+npx github:Mun1to/moods init
 ```
 
-4. Show the verdicts in a screen of your own: a switch per mod, its state in words and one button
-   that turns every mod off.
+It copies the plugin (plain JavaScript modules, no dependencies and no build step), reads your
+styles to draft a `contract.json` with the names you promise to keep, writes `MODS.md` for the
+people who use the app and adds the note for coding agents to `AGENTS.md`. Then two lines where
+your window starts, and one tag in your settings:
 
-Or let your coding agent do it: [`skills/moods`](skills/moods) is an agent skill with these steps,
-the runtime, the format and the four moods inside. Copy that folder into the skills of your
-project and ask for "add mods to this app".
+```js
+import { startMods } from "./mods/index.js";
+import contract from "./mods/contract.json";
+
+await startMods({ contract });
+```
+
+```html
+<moods-panel></moods-panel>
+```
+
+<p align="center"><img src=".github/readme/quickstart.png" alt="A small tasks app with the Dream mood on. Its settings show the five moods with their faces, two mods with their switches, a button to add a mod and the button that turns every mod off."></p>
+
+<p align="center"><a href="examples/quickstart/index.html">The quickstart app</a>: those two lines and the tag.</p>
+
+That already ships the four moods, remembers what the person picked and keeps the mods they add
+in the browser. An app with a data folder reads the person's mods from there:
+
+| Your app | Where the mods come from |
+|---|---|
+| Tauri | Copy [`read_mods.rs`](skills/moods/templates/read_mods.rs) and pass `mods: () => invoke("read_mods")`. |
+| Python (pywebview) | Expose [`read_mods.py`](skills/moods/templates/read_mods.py) to the window and pass it the same way. |
+| Electron or Node | `readModsFolder(dir)` from [`runtime/node.js`](skills/moods/runtime/node.js). |
+| A web app | Nothing to do: people add mods in the panel. |
+
+The three readers give the same answer for the same folder, and a test compares them.
+
+Go through the drafted contract before you ship it: every name in it is a promise. The variables
+people may change, the seven color roles, the pieces (`data-piece`), the zones (`data-zone`) and
+what no mod may touch (`data-no-mods`). [The demo's contract](examples/demo/contract.json) is a
+full example.
+
+Or let your coding agent do it all: [`skills/moods`](skills/moods) is an agent skill with these
+steps, the runtime, the format and the four moods inside. Copy that folder into the skills of
+your project and ask for "add mods to this app".
 
 ## Make a mod
 
@@ -157,7 +221,7 @@ permissions, payments) also needs to be checked outside the window.
 
 ```sh
 pnpm install
-pnpm demo     # the demo app, on http://127.0.0.1:4848/examples/demo/
+pnpm demo     # the demo app, on http://127.0.0.1:4848/examples/demo/ (and the quickstart, on /examples/quickstart/)
 pnpm test     # the rules of the format, and what a mod does on a real page in a browser without a window
 pnpm check    # the types
 pnpm readme   # the drawing and the screenshots of this page, made again
@@ -177,8 +241,10 @@ Set `CHROME_PATH` to choose one.
 | [`skills/moods/runtime/`](skills/moods/runtime) | The plugin: plain JavaScript modules for any web window, and a reader of the mods folder for Node. |
 | [`skills/moods/reference/format.md`](skills/moods/reference/format.md) | The mod format, version 1. |
 | [`skills/moods/moods/`](skills/moods/moods) | The four built-in moods, as real mods. |
-| [`skills/moods/scripts/check.mjs`](skills/moods/scripts/check.mjs) | Checks mods against a contract from the command line. |
-| [`examples/demo/`](examples/demo) | A small app with the plugin inside. |
+| [`skills/moods/scripts/`](skills/moods/scripts) | `init` gets an app ready, `check` checks mods against a contract, `forks` says what the forks of an app changed. |
+| [`skills/moods/templates/`](skills/moods/templates) | The folder readers for Tauri and Python, the guide an app gives its users and the note for agents. |
+| [`examples/quickstart/`](examples/quickstart) | The smallest app with mods: two lines and a tag. |
+| [`examples/demo/`](examples/demo) | A fuller app, where you can write a mod and watch it apply. |
 | [`test/`](test) | The rules of the format, one test each, and the tests in a real browser. |
 | [`brand/`](brand) | The wordmark, the faces and the icons, generated by `pnpm brand`. |
 
@@ -186,9 +252,10 @@ Set `CHROME_PATH` to choose one.
 
 ## Status
 
-An early version: the format can still change before the first release. Next come the loaders
-for Tauri (Rust) and pywebview (Python), a real app updated with mods on, and a catalog to share
-mods without waiting for anyone's review.
+An early version: the format can still change before the first release. Mods change how an app
+looks and how it is laid out. Still to come: a real app updated with mods on, mods that add
+behavior (in a sandbox, with permissions the person grants), which is what most forks change, and
+a catalog to share mods without waiting for anyone's review.
 
 ## Don't trust it, check it
 

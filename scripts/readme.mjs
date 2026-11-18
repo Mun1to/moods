@@ -125,12 +125,12 @@ if (!process.argv.includes("--drawing")) {
   try {
     /**
      * @param {string} name @param {string} query
-     * @param {{ width?: number, height?: number, scheme?: "light" | "dark", before?: string }} [options]
+     * @param {{ width?: number, height?: number, scheme?: "light" | "dark", before?: string, app?: string, ready?: string }} [options]
      */
-    const shot = async (name, query, { width = 1280, height = 860, scheme = "light", before } = {}) => {
+    const shot = async (name, query, { width = 1280, height = 860, scheme = "light", before, app = "demo", ready = "document.body.dataset.ready === '1'" } = {}) => {
       const page = await browser.newPage({ width, height, deviceScaleFactor: 2, colorScheme: scheme });
-      await page.goto(`${server.url}/examples/demo/${query}`);
-      await page.waitFor("document.body.dataset.ready === '1'");
+      await page.goto(`${server.url}/examples/${app}/${query}`);
+      await page.waitFor(ready);
       if (before) await page.evaluate(before);
       await page.evaluate("document.fonts.ready.then(() => true)");
       await new Promise((r) => setTimeout(r, 400));
@@ -150,6 +150,19 @@ if (!process.argv.includes("--drawing")) {
     // Writing a mod live: one that passes, one the gate stops.
     await shot("make-a-mod", "?tab=make&mood=focus&on=", { width: 1000, height: 760, scheme: "dark" });
     await shot("refused", "?tab=make&on=", { width: 1000, height: 760, before: `document.querySelector('[data-example="1"]').click()` });
+    // The smallest app with mods: two lines of code and the panel tag.
+    await shot("quickstart", "", {
+      app: "quickstart", ready: "window.ready === true", width: 1280, height: 700,
+      before: `(async () => {
+        const get = async (file) => (await fetch(file)).text();
+        for (const [id, file] of [["rounder-corners", "style.css"], ["settings-first", "structure.json"]]) {
+          window.mods.add({ id, manifest: await get("mods/" + id + "/mod.json"), files: { [file]: await get("mods/" + id + "/" + file) } });
+        }
+        window.mods.turn("settings-first", false);
+        window.mods.pickMood("dream");
+        return true;
+      })()`,
+    });
   } finally {
     await browser.close();
     await server.close();
