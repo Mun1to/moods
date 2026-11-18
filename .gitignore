@@ -18,6 +18,9 @@ dist/
 .env
 .env.*
 
+# The promo video: kept out of the repository until its owner says otherwise.
+promo/
+
 # Local screenshots and browser leftovers.
 .playwright-mcp/
 .fotos/
