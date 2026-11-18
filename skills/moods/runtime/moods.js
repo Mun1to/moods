@@ -1,5 +1,5 @@
-// Example moods for any app with the plugin: 15 moods in 6 families. They are examples, not a fixed set:
-// an app ships the ones it likes, changes them or brings its own.
+// Example moods for any app with the plugin: 15 moods in 6 families. The plugin puts none of them in an app
+// by itself: an app offers the ones it passes to `startMods`, changes them or brings its own.
 // Written by `pnpm moods` from the files in ../library/. Change those, not this file.
 //
 // Some families bring the colors of other projects, under the license each one chose:
@@ -30,7 +30,7 @@
 
 /** The families: who made each one, under which license, and which moods are in it. */
 export const FAMILIES = [
-  {"name":"Moods","about":"The four that come with the plugin, one for each face.","source":"https://github.com/Mun1to/moods","license":"MIT","copyright":"Copyright (c) 2026 Munir Torres Athayde","moods":["calm","focus","dream","bright"]},
+  {"name":"Moods","about":"Four examples by this project, one for each face.","source":"https://github.com/Mun1to/moods","license":"MIT","copyright":"Copyright (c) 2026 Munir Torres Athayde","moods":["calm","focus","dream","bright"]},
   {"name":"Catppuccin","about":"Soothing pastel colors: one light flavor and three dark ones.","source":"https://github.com/catppuccin/palette","license":"MIT","copyright":"Copyright (c) 2021 Catppuccin","moods":["catppuccin-latte","catppuccin-frappe","catppuccin-macchiato","catppuccin-mocha"]},
   {"name":"Everforest","about":"A green forest that is warm and soft on the eyes.","source":"https://github.com/sainnhe/everforest","license":"MIT","copyright":"Copyright (c) 2019 sainnhe","moods":["everforest-dark"]},
   {"name":"Flexoki","about":"An inky palette for reading and writing, on paper or at night.","source":"https://github.com/kepano/flexoki","license":"MIT","copyright":"Copyright (c) 2023 Steph Ango","moods":["flexoki-light","flexoki-dark"]},
@@ -59,9 +59,6 @@ export const EXAMPLES = [
   {"id":"kanagawa-lotus","manifest":{"format":1,"id":"kanagawa-lotus","name":"Lotus","type":"mood","family":"Kanagawa","request":"The Lotus mood of Kanagawa.","contract":"^1.0"},"files":{"mood.json":"{\"scheme\":\"light\",\"face\":\"bright\",\"colors\":{\"background\":\"#f2ecbc\",\"surface\":\"#e5ddb0\",\"text\":\"#43436c\",\"muted\":\"#545464\",\"accent\":\"#624c83\",\"accentText\":\"#f2ecbc\",\"border\":\"#8a8980\"}}"}},
   {"id":"rose-pine-main","manifest":{"format":1,"id":"rose-pine-main","name":"Main","type":"mood","family":"Rosé Pine","request":"The Main mood of Rosé Pine.","contract":"^1.0"},"files":{"mood.json":"{\"scheme\":\"dark\",\"face\":\"dream\",\"colors\":{\"background\":\"#191724\",\"surface\":\"#1f1d2e\",\"text\":\"#e0def4\",\"muted\":\"#908caa\",\"accent\":\"#ebbcba\",\"accentText\":\"#191724\",\"border\":\"#6e6a86\"}}"}},
 ];
-
-/** The ones that come with the plugin: what an app ships when it does not say which. */
-export const MOODS = EXAMPLES.slice(0, 4);
 
 /**
  * The example moods of some families, by name: `moodsFrom("Moods", "Catppuccin")`.

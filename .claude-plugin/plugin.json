@@ -1,7 +1,7 @@
 {
   "name": "moods",
   "description": "Adds user mods to an open source app (moods, style mods and structure mods that survive every update), makes a mod for an app that already supports them, or turns the changes of a fork into mods.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "Munir Torres",
     "url": "https://munito.dev"

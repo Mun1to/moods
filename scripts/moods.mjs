@@ -10,7 +10,7 @@ import { moodContrastNotes, ROLES } from "../skills/moods/runtime/compile.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 export const LIBRARY = path.join(root, "skills", "moods", "library");
-/** The family that comes with the plugin: its moods keep their short names. */
+/** The family of this project: its moods keep their short names. */
 const HOUSE = "moods";
 /** The four faces of the brand. A mood picks the one that feels like it. */
 export const FACES = ["bright", "calm", "focus", "dream"];
@@ -177,10 +177,9 @@ export async function moodsModule(families) {
   })));
   const about = list.map((f) => ({ name: f.name, about: f.about, source: f.source, license: f.license, copyright: f.copyright, moods: f.moods.map((m) => m.id) }));
   const count = `${moods.length} moods in ${list.length} families`;
-  const own = list.find((f) => f.slug === HOUSE)?.moods.length ?? 0;
   const lines = [
-    `// Example moods for any app with the plugin: ${count}. They are examples, not a fixed set:`,
-    "// an app ships the ones it likes, changes them or brings its own.",
+    `// Example moods for any app with the plugin: ${count}. The plugin puts none of them in an app`,
+    "// by itself: an app offers the ones it passes to `startMods`, changes them or brings its own.",
     "// Written by `pnpm moods` from the files in ../library/. Change those, not this file.",
   ];
   if (others.length) {
@@ -200,9 +199,6 @@ export async function moodsModule(families) {
     ' * @type {import("./compile.js").ModInput[]}',
     " */",
     `export const EXAMPLES = [\n${moods.map((m) => `  ${JSON.stringify(m)},`).join("\n")}\n];`,
-    "",
-    "/** The ones that come with the plugin: what an app ships when it does not say which. */",
-    `export const MOODS = EXAMPLES.slice(0, ${own});`,
     "",
     "/**",
     ' * The example moods of some families, by name: `moodsFrom("Moods", "Catppuccin")`.',

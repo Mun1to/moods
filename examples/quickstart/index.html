@@ -53,8 +53,9 @@ button.go { padding: .6em 1.1em; font: inherit; font-weight: 700; color: var(--o
 </div>
 
 <script type="module">
-// The whole integration: two lines here and the tag above. `moods: EXAMPLES` adds every example
-// mood; without it, the app ships the four of the plugin.
+// The whole integration: two lines here and the tag above. The plugin has no moods of its own:
+// this app offers the example ones because it passes them (`moods: EXAMPLES`). Pass yours instead,
+// or leave `moods` out and the panel has no mood section.
 import { startMods, EXAMPLES } from "../../skills/moods/runtime/index.js";
 window.mods = await startMods({ contract: "./contract.json", moods: EXAMPLES });
 

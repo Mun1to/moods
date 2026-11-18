@@ -8,11 +8,11 @@ export { review, compileMood, compileStyle, compileStructure, moodContrastNotes,
 export { createModHost } from "./apply.js";
 export { startMods, modsOf } from "./start.js";
 export { ModsPanel, WORDS } from "./panel.js";
-export { MOODS, EXAMPLES, FAMILIES, moodsFrom } from "./moods.js";
+export { EXAMPLES, FAMILIES, moodsFrom } from "./moods.js";
 export { satisfies, parseVersion } from "./semver.js";
 export { contrast, luminance, colorAs, COLOR_FORMATS } from "./color.js";
 
 /** The version of this runtime. */
-export const VERSION = "0.3.0";
+export const VERSION = "0.4.0";
 /** The version of the mod format it reads. */
 export const FORMAT = 1;

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, readManifest, MOODS, EXAMPLES, FAMILIES, moodsFrom } from "../skills/moods/runtime/index.js";
+import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, readManifest, EXAMPLES, FAMILIES, moodsFrom } from "../skills/moods/runtime/index.js";
 import { moodsModule, creditsFile, readLibrary, checkLibrary } from "../scripts/moods.mjs";
 import { readModsFolder, watchModsFolder } from "../skills/moods/runtime/node.js";
 
@@ -165,11 +165,12 @@ test("a mood wins over the app's own colors and says if it is dark or light", ()
 test("every mood of the library passes every check, with no contrast warning", async () => {
   const families = await readLibrary();
   assert.deepEqual(checkLibrary(families), []);
-  // The family that comes with the plugin goes first, and keeps the short names people already saved.
+  // The family of this project goes first, and keeps the short names people already saved.
   assert.equal(families[0].name, "Moods");
   assert.deepEqual(moodsFrom("Moods").map((m) => m.id), ["calm", "focus", "dream", "bright"]);
-  // An app that says nothing ships those four. The rest are examples it can ask for.
-  assert.deepEqual(MOODS, moodsFrom("Moods"));
+  // Every one of them is an example an app asks for by name: none is built in.
+  assert.deepEqual(moodsFrom(), []);
+  assert.equal(moodsFrom("Moods", "Catppuccin").length, 8);
   for (const mood of EXAMPLES) {
     const v = review(mood, contract);
     assert.equal(v.state, "applied", `${mood.id}: ${v.notes.join("; ")}`);
@@ -318,8 +319,8 @@ body { background: hsl(var(--background)); color: hsl(var(--foreground)); border
     assert.ok(drafted.variables["--radius"], "the corner is offered");
     assert.equal(drafted.variables["--tw-ring"], undefined);
     assert.deepEqual([Object.keys(drafted.pieces), drafted.noMods], [["toolbar"], ["keys", "way-back"]]);
-    // The draft is good enough for every built-in mood to apply.
-    for (const mood of MOODS) assert.equal(review(mood, drafted).state, "applied", mood.id);
+    // The draft is good enough for every example mood to apply.
+    for (const mood of EXAMPLES) assert.equal(review(mood, drafted).state, "applied", mood.id);
     assert.match(await readFile(path.join(app, "src", "mods", "index.js"), "utf8"), /startMods/);
     assert.match(await readFile(path.join(app, "MODS.md"), "utf8"), /^# Mods for tiny-app/);
     const note = await readFile(forAgents, "utf8");

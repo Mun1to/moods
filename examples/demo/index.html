@@ -286,7 +286,7 @@ async function load(dir) {
   if (res?.ok) files[FILES[manifest.type]] = await res.text();
   return { id: manifest.id, manifest, files };
 }
-// The four moods that come with the plugin. The whole library is in ../library/.
+// This demo offers four of the example moods. The whole library is in ../library/.
 const moods = moodsFrom("Moods");
 const shipped = await Promise.all(list.mods.map(load));
 const colorsOf = (id) => JSON.parse(moods.find((m) => m.id === id).files["mood.json"]);

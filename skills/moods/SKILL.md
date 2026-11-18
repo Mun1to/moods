@@ -14,9 +14,10 @@ Three jobs, one format. Everything they need is in this folder:
   contract without opening the app. `scripts/forks.mjs`: what the forks of an app changed.
 - `templates/`: the folder readers for Tauri (`read_mods.rs`) and Python (`read_mods.py`), `MODS.md`
   (the guide an app gives its users), the note for coding agents and the text of a contract request.
-- `library/`: example moods, one file per family (the four of the plugin, Catppuccin, Kanagawa and
-  more), each with its source and its license. They are examples, not a fixed set: an app ships
-  the ones it likes, changes them or brings its own. `CREDITS.md` there lists them all.
+- `library/`: example moods, one file per family (Catppuccin, Kanagawa and more), each with its
+  source and its license. They are examples and nothing else: the plugin puts no mood in an app by
+  itself. An app offers the ones it passes, changes them or brings its own. `CREDITS.md` there
+  lists them all.
 
 ## Job 1: a maintainer wants their app to accept mods
 
@@ -44,9 +45,12 @@ Three jobs, one format. Everything they need is in this folder:
 
    await startMods({ contract });
    ```
-   That already ships the four moods of the plugin, remembers what the person picked and applies
-   it. To offer the example moods too, pass `moods: EXAMPLES`, or `moods: moodsFrom("Moods",
-   "Catppuccin")` for some families: the panel then shows one family at a time. Add
+   That loads the person's mods, remembers what they turned on and applies it. The plugin has no
+   moods of its own, so the app offers none until it passes some in `moods`: its own (a mood is
+   seven colors), or the examples that come along, with `moods: EXAMPLES` for all of them or
+   `moods: moodsFrom("Moods", "Catppuccin")` for some families. Ask the maintainer which, if any:
+   do not decide the look of their app for them. With more than one family the panel shows one at
+   a time, and with no moods it has no mood section. Add
    `onScheme: (scheme) => setAppTheme(scheme ?? systemTheme())` when the app has its own dark and
    light looks, so the right one sits under the mood that is on.
 4. **Give it the person's mods folder**, in their data folder, never in the install folder:
@@ -59,8 +63,8 @@ Three jobs, one format. Everything they need is in this folder:
    Pass `folder` (and `openFolder`) too, so the panel can say where the mods live. The plugin reads
    the folder again when the window gets the focus back: an agent writes a mod, the person returns
    to the app and it is on.
-5. **Put the panel in the app's settings:** `<moods-panel></moods-panel>`. It lists the moods and
-   the mods with their switches, says in words why one does not apply, and has the button that
+5. **Put the panel in the app's settings:** `<moods-panel></moods-panel>`. It lists the moods the
+   app offers and the mods with their switches, says in words why one does not apply, and has the button that
    turns them all off. Its words are in `panel.words`, to translate.
 6. **Give people a way back that no mod can break:** a start without mods from outside the window
    (a command-line flag, a menu or a tray item) that passes `off: true` to `startMods`. A web app

@@ -4,9 +4,9 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { findBrowser, launch } from "../scripts/lib/browser.mjs";
 import { startServer } from "../scripts/serve.mjs";
-import { MOODS, EXAMPLES } from "../skills/moods/runtime/index.js";
+import { EXAMPLES, moodsFrom } from "../skills/moods/runtime/index.js";
 
-const MOODS_BRIGHT = /** @type {string} */ (MOODS.find((m) => m.id === "bright")?.files?.["mood.json"]);
+const MOODS_BRIGHT = /** @type {string} */ (moodsFrom("Moods").find((m) => m.id === "bright")?.files?.["mood.json"]);
 
 const skip = findBrowser() ? false : "no Chrome, Edge or Chromium on this computer";
 /** @type {Awaited<ReturnType<typeof launch>>} */
@@ -145,7 +145,8 @@ test("structure, a refused mod, a start without mods and the way back", { skip }
   }
 });
 
-// The quickstart app is the whole integration: `startMods({ contract })` and the <moods-panel> tag.
+// The quickstart app is the whole integration: one call to `startMods` and the <moods-panel> tag.
+// It offers the example moods because it passes them: the plugin has none of its own.
 const QUICK = "/examples/quickstart/";
 const inPanel = (/** @type {string} */ code) => `(() => { const panel = document.querySelector("moods-panel"); const root = panel.shadowRoot; ${code} })()`;
 
@@ -218,6 +219,33 @@ test("two lines and a tag: the moods, the person's mods, what is remembered and 
     await page.waitFor("window.ready");
     assert.deepEqual(await page.evaluate(() => [window.mods.safeStart, getComputedStyle(document.body).backgroundColor, window.mods.list.every((m) => m.state === "off")]),
       [true, own, true]);
+    assert.deepEqual(page.errors, []);
+  } finally {
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.close();
+  }
+});
+
+test("an app that passes no moods offers none: the plugin has no moods of its own", { skip }, async () => {
+  const page = await quick();
+  try {
+    const seen = await page.evaluate(async () => {
+      localStorage.clear();
+      window.mods.stop();
+      const { startMods } = await import("/skills/moods/runtime/index.js");
+      const mods = await startMods({ contract: "./contract.json" });
+      const root = document.querySelector("moods-panel").shadowRoot;
+      const bare = { moods: mods.list.filter((m) => m.type === "mood").length, titles: [...root.querySelectorAll("h3")].map((h) => h.textContent), buttons: root.querySelectorAll(".mood").length };
+      // A mood the person adds is theirs to pick: the section appears with it.
+      mods.add({ manifest: { format: 1, id: "night", name: "Night", type: "mood", request: "A dark one.", contract: "^1.0" },
+        files: { "mood.json": JSON.stringify({ scheme: "dark", colors: { background: "#102126", surface: "#17323B", text: "#DCEFEF", muted: "#8FB3B6", accent: "#6FD3C5", accentText: "#0B1F1D", border: "#28505A" } }) } });
+      const own = { titles: [...root.querySelectorAll("h3")].map((h) => h.textContent), buttons: [...root.querySelectorAll(".mood")].map((b) => b.textContent) };
+      mods.stop();
+      localStorage.clear();
+      return { bare, own };
+    });
+    assert.deepEqual(seen.bare, { moods: 0, titles: ["Mods"], buttons: 0 });
+    assert.deepEqual(seen.own, { titles: ["Mood", "Mods"], buttons: ["Original", "Night"] });
     assert.deepEqual(page.errors, []);
   } finally {
     await page.evaluate(() => { localStorage.clear(); });

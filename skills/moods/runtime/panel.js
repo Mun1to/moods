@@ -301,7 +301,8 @@ export class ModsPanel extends Base {
     root.replaceChildren(...[
       h("style", {}, sheet(mods.contract)),
       status ? h("p", { class: "note", role: "status" }, status) : null,
-      h("h3", {}, w.moods), names, picker,
+      // An app that offers no moods has no mood section, until the person adds one of their own.
+      ...(moods.length ? [h("h3", {}, w.moods), names, picker] : []),
       h("h3", {}, w.mods),
       others.length ? list : h("p", { class: "list" }, w.none),
       h("div", { class: "foot" }, left, h("slot", { name: "way-back" })),

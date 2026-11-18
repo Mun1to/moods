@@ -31,7 +31,7 @@ set, so nobody has to approve your taste. A check reads the colors, and what pas
    }
    ```
 
-2. **Run `pnpm moods`.** It checks every mood and writes what the plugin ships. When a mood does
+2. **Run `pnpm moods`.** It checks every mood and writes the examples that come along with the plugin. When a mood does
    not pass, it says which one and why, and writes nothing.
 3. **Look at it:** `pnpm demo`, then open `/examples/library/` at the address it prints. Click your
    mood and the whole page wears it.

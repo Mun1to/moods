@@ -269,6 +269,7 @@ try {
   say("  <moods-panel></moods-panel>");
   say("");
   say("Without a bundler, give startMods the address of contract.json instead of importing it.");
+  say("The plugin has no moods of its own: the app offers the ones it passes in `moods` (its own, or `EXAMPLES`), and none otherwise.");
   if (await exists(path.join(app, "src-tauri"))) {
     say("This is a Tauri app: copy templates/read_mods.rs into src-tauri and pass `mods: () => invoke(\"read_mods\")`.");
   } else if ((await exists(path.join(app, "pyproject.toml"))) || (await exists(path.join(app, "requirements.txt")))) {

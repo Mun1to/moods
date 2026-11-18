@@ -2,7 +2,6 @@
 // off, apply them, keep a way back, and tell the panel when something changes.
 import { createModHost } from "./apply.js";
 import { readManifest } from "./manifest.js";
-import { MOODS } from "./moods.js";
 
 /**
  * @typedef {import("./compile.js").Contract} Contract
@@ -46,8 +45,9 @@ export function modsOf(doc = globalThis.document) {
  *   that reads them again (it runs at the start, on `reload()` and when the window gets the focus
  *   back). Leave it out in an app with no folder of its own: people then add mods in the panel and
  *   the browser keeps them.
- *   `moods`: the moods the app ships. The four of the plugin unless told otherwise. `EXAMPLES` is
- *   every example mood, and `moodsFrom("Moods", "Catppuccin")` the ones of some families.
+ *   `moods`: the moods the app offers. None unless it passes some: the plugin has no moods of its
+ *   own. The app's own, or the examples that come along: `EXAMPLES` is every example mood, and
+ *   `moodsFrom("Moods", "Catppuccin")` the ones of some families.
  *   `off`: start with every mod off, for the flag or the menu that is the way back. A web app gets
  *   the same from `?mods=off` in its address.
  *   `folder` and `openFolder`: where the person's mods live, for the panel to say and to open.
@@ -64,7 +64,7 @@ export async function startMods(options) {
   const contract = { ...given, noMods: [...new Set([...(given.noMods ?? []), "way-back"])] };
   const source = options.mods;
   const keeps = options.keep ?? source === undefined;
-  const moods = options.moods ?? MOODS;
+  const moods = options.moods ?? [];
   const key = `mods:${contract.app ?? "app"}`;
   const storage = options.storage === undefined ? safeStorage(view) : options.storage;
   const safeStart = Boolean(options.off) || flagInAddress(view);
