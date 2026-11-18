@@ -11,6 +11,8 @@ Put the plugin in your app with one command. The people who use it change how it
 is laid out, by hand or by asking their coding agent, and they keep getting your updates: no fork,
 and no pull request waiting to be merged.
 
+**It is a plugin, not a theme pack.** No themes are built in, and the moods you see here are examples.
+
 MIT license · No dependencies · Works in any web window: Tauri, Electron, pywebview, an extension or a web app
 
 [Why](#why) · [Add it to your app](#add-it-to-your-app) · [Make a mod](#make-a-mod) · [The mod format](skills/moods/reference/format.md) · [The agent skill](skills/moods/SKILL.md)
@@ -74,37 +76,24 @@ the apps stopped being developed, so their forks cannot fall behind and are left
 
 <p align="center">The demo app with the plugin inside: a mood on, every mod with its state in words, and the account keys that no mod can change.</p>
 
-| | |
-|---|---|
-| **Moods** | Ready palettes: the four of the plugin (Calm, Focus, Dream and Bright) and example moods grouped in families, like Catppuccin or Kanagawa. They are examples, not a fixed set. An app maps seven color roles once, and every mood works in it. |
-| **Style mods** | CSS written against the names the app promises in its `contract.json`. A gate refuses anything that loads or runs. |
-| **Structure mods** | Order or hide pieces of the interface with a few lines of JSON, without moving the app's own DOM. |
-| **Zones without mods** | What no mod should touch (keys, permissions, payments) keeps the app's own look, whatever is on. |
-| **Mods win** | A mod beats the app's own styles, also the inline ones, so it works the same in every app. |
-| **Survives updates** | Mods live in the person's data folder, never in the install folder, and are checked against the app's contract on every start. When the app changes, a mod says so instead of breaking quietly. |
-| **A way back** | Every mod can be turned off at once, and the app can start with all of them off. |
-| **The panel** | `<moods-panel>`, one tag: the moods, every mod with its switch, why one does not apply in words, and the button that turns them all off. |
-| **A note for agents** | A few lines in the app's `AGENTS.md`: asked to change the app for one person, a coding agent writes a mod instead of editing the source. |
-
-## Four moods to start with
-
 <table>
 <tr>
-<td width="50%" valign="top"><img src=".github/readme/mood-calm.png" alt="The demo app with the Calm mood"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/calm-dark.svg"><img src="brand/faces/calm.svg" alt="" height="22" align="middle"></picture> <b>Calm.</b> Deep teal, for the quiet hours.</td>
-<td width="50%" valign="top"><img src=".github/readme/mood-focus.png" alt="The demo app with the Focus mood"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/focus-dark.svg"><img src="brand/faces/focus.svg" alt="" height="22" align="middle"></picture> <b>Focus.</b> Warm amber on dark, for long sessions.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-style.svg" width="36" height="36" alt=""><br><b>Style mods</b><br>CSS against the names the app promises. A gate refuses anything that loads or runs, and a mod wins over the app's own styles.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-structure.svg" width="36" height="36" alt=""><br><b>Structure mods</b><br>Order or hide pieces of the interface with a few lines of JSON.</td>
 </tr>
-</table>
-
-<table>
 <tr>
-<td width="50%" valign="top"><img src=".github/readme/mood-dream.png" alt="The demo app with the Dream mood"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/dream-dark.svg"><img src="brand/faces/dream.svg" alt="" height="22" align="middle"></picture> <b>Dream.</b> Violet, for the night.</td>
-<td width="50%" valign="top"><img src=".github/readme/mood-bright.png" alt="The demo app with the Bright mood"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/bright-dark.svg"><img src="brand/faces/bright.svg" alt="" height="22" align="middle"></picture> <b>Bright.</b> Cream and coral, for the day.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-moods.svg" width="36" height="36" alt=""><br><b>Moods</b><br>A mood is seven colors. None is built in: an app offers its own, or the examples here.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-updates.svg" width="36" height="36" alt=""><br><b>Survives updates</b><br>Mods live in the person's data folder, never in the install folder. When the app changes, a mod says so instead of breaking quietly.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src=".github/readme/icon-zones.svg" width="36" height="36" alt=""><br><b>Zones without mods</b><br>Keys, permissions and payments keep the app's own look, whatever is on.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-back.svg" width="36" height="36" alt=""><br><b>A way back</b><br>One button turns every mod off, and the app can start with all of them off.</td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src=".github/readme/icon-panel.svg" width="36" height="36" alt=""><br><b>The panel</b><br><code>&lt;moods-panel&gt;</code>, one tag: every mod with its switch, and why one does not apply, in words.</td>
+<td width="50%" valign="top"><img src=".github/readme/icon-agents.svg" width="36" height="36" alt=""><br><b>A note for agents</b><br>Asked to change the app for one person, a coding agent writes a mod instead of editing the source.</td>
 </tr>
 </table>
-
-<p align="center"><img src=".github/readme/library.png" alt="The example moods: the four of the plugin and the families Catppuccin, Everforest, Flexoki, Kanagawa and Rosé Pine. Each mood is drawn as a small app in its own colors, with its face."></p>
-
-<p align="center">More <a href="skills/moods/library">example moods</a>, in families. None of them is the official one: a family is one file, and <a href="CONTRIBUTING.md">a new mood is seven colors</a>.</p>
 
 <table>
 <tr>
@@ -112,6 +101,40 @@ the apps stopped being developed, so their forks cannot fall behind and are left
 <td width="50%" valign="top"><img src=".github/readme/refused.png" alt="A style that loads a picture from another server, refused with its reason"><br><b>What cannot be trusted is stopped, with the reason.</b> Here, a style that tries to load a picture from another server.</td>
 </tr>
 </table>
+
+## Moods are examples
+
+The plugin has no themes of its own. A mood is seven colors, and an app offers the ones it passes:
+its own, or the examples in this repository. With none, the app keeps its look and the panel lists
+only mods.
+
+```js
+import { startMods, EXAMPLES, moodsFrom } from "./mods/index.js";
+
+await startMods({ contract });                                  // no moods: the app keeps its look
+await startMods({ contract, moods: EXAMPLES });                 // every example mood
+await startMods({ contract, moods: moodsFrom("Catppuccin") });  // the ones of one family
+```
+
+Four of the examples, on the demo app:
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src=".github/readme/mood-calm.png" alt="The demo app with the example mood Calm"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/calm-dark.svg"><img src="brand/faces/calm.svg" alt="" height="22" align="middle"></picture> <b>Calm.</b> Deep teal, for the quiet hours.</td>
+<td width="50%" valign="top"><img src=".github/readme/mood-focus.png" alt="The demo app with the example mood Focus"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/focus-dark.svg"><img src="brand/faces/focus.svg" alt="" height="22" align="middle"></picture> <b>Focus.</b> Warm amber on dark, for long sessions.</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="50%" valign="top"><img src=".github/readme/mood-dream.png" alt="The demo app with the example mood Dream"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/dream-dark.svg"><img src="brand/faces/dream.svg" alt="" height="22" align="middle"></picture> <b>Dream.</b> Violet, for the night.</td>
+<td width="50%" valign="top"><img src=".github/readme/mood-bright.png" alt="The demo app with the example mood Bright"><br><picture><source media="(prefers-color-scheme: dark)" srcset="brand/faces/bright-dark.svg"><img src="brand/faces/bright.svg" alt="" height="22" align="middle"></picture> <b>Bright.</b> Cream and coral, for the day.</td>
+</tr>
+</table>
+
+<p align="center"><img src=".github/readme/library.png" alt="The example moods, in six families: Moods, Catppuccin, Everforest, Flexoki, Kanagawa and Rosé Pine. Each mood is drawn as a small app in its own colors, with its face."></p>
+
+<p align="center">The <a href="skills/moods/library">example moods</a>, in families. None of them is the official one: a family is one file, and <a href="CONTRIBUTING.md">a new mood is seven colors</a>.</p>
 
 ## A mod is a small folder
 
@@ -173,13 +196,14 @@ await startMods({ contract });
 
 <p align="center"><img src=".github/readme/quickstart.png" alt="A small tasks app with the Dream mood on. Its settings show the families of moods and the moods of one with their faces, two mods with their switches, a button to add a mod and the button that turns every mod off."></p>
 
-<p align="center"><a href="examples/quickstart/index.html">The quickstart app</a>: those two lines and the tag.</p>
+<p align="center"><a href="examples/quickstart/index.html">The quickstart app</a>: those two lines and the tag, with the example moods passed in.</p>
 
-That already ships the four moods (`moods: EXAMPLES` adds every example mood), remembers what the person picked and keeps the mods they add
-in the browser. An app with a data folder reads the person's mods from there:
+That already remembers what the person switched on and keeps the mods they add in the browser. It
+offers no moods until you pass some: [moods are examples](#moods-are-examples). An app with a data
+folder reads the person's mods from there:
 
 | Your app | Where the mods come from |
-|---|---|
+|:---|:---|
 | Tauri | Copy [`read_mods.rs`](skills/moods/templates/read_mods.rs) and pass `mods: () => invoke("read_mods")`. |
 | Python (pywebview) | Expose [`read_mods.py`](skills/moods/templates/read_mods.py) to the window and pass it the same way. |
 | Electron or Node | `readModsFolder(dir)` from [`runtime/node.js`](skills/moods/runtime/node.js). |
@@ -245,19 +269,17 @@ Set `CHROME_PATH` to choose one.
 <details>
 <summary><b>What is in this repository</b></summary>
 
-| Folder | What |
-|---|---|
-| [`skills/moods/`](skills/moods) | The agent skill, and everything an app needs inside it. |
-| [`skills/moods/runtime/`](skills/moods/runtime) | The plugin: plain JavaScript modules for any web window, and a reader of the mods folder for Node. |
-| [`skills/moods/reference/format.md`](skills/moods/reference/format.md) | The mod format, version 1. |
-| [`skills/moods/library/`](skills/moods/library) | The example moods: one file per family, with its source and its license. [How to add a mood](CONTRIBUTING.md). |
-| [`skills/moods/scripts/`](skills/moods/scripts) | `init` gets an app ready, `check` checks mods against a contract, `forks` says what the forks of an app changed. |
-| [`skills/moods/templates/`](skills/moods/templates) | The folder readers for Tauri and Python, the guide an app gives its users and the note for agents. |
-| [`examples/quickstart/`](examples/quickstart) | The smallest app with mods: two lines and a tag. |
-| [`examples/library/`](examples/library) | The example moods to look at: the page wears the one you pick. |
-| [`examples/demo/`](examples/demo) | A fuller app, where you can write a mod and watch it apply. |
-| [`test/`](test) | The rules of the format, one test each, and the tests in a real browser. |
-| [`brand/`](brand) | The wordmark, the faces and the icons, generated by `pnpm brand`. |
+- [`skills/moods/`](skills/moods). The agent skill, and everything an app needs inside it.
+- [`skills/moods/runtime/`](skills/moods/runtime). The plugin: plain JavaScript modules for any web window, and a reader of the mods folder for Node.
+- [`skills/moods/reference/format.md`](skills/moods/reference/format.md). The mod format, version 1.
+- [`skills/moods/library/`](skills/moods/library). The example moods: one file per family, with its source and its license. [How to add a mood](CONTRIBUTING.md).
+- [`skills/moods/scripts/`](skills/moods/scripts). `init` gets an app ready, `check` checks mods against a contract, `forks` says what the forks of an app changed.
+- [`skills/moods/templates/`](skills/moods/templates). The folder readers for Tauri and Python, the guide an app gives its users and the note for agents.
+- [`examples/quickstart/`](examples/quickstart). The smallest app with mods: two lines and a tag.
+- [`examples/library/`](examples/library). The example moods to look at: the page wears the one you pick.
+- [`examples/demo/`](examples/demo). A fuller app, where you can write a mod and watch it apply.
+- [`test/`](test). The rules of the format, one test each, and the tests in a real browser.
+- [`brand/`](brand). The wordmark, the faces and the icons, generated by `pnpm brand`.
 
 </details>
 
@@ -289,10 +311,10 @@ whatever you use. It is the same prompt in every public repository here, so you 
 <details>
 <summary><b>Built on</b></summary>
 
-| | |
-|---|---|
+| Piece | Where it is used, and its license |
+|:---|:---|
 | [**Nunito**](https://github.com/googlefonts/nunito) | The font of the wordmark, in `brand/fonts`, under the SIL Open Font License 1.1. |
-| [**Lucide**](https://lucide.dev) | The four icons of the "how it works" drawing, under the ISC License. |
+| [**Lucide**](https://lucide.dev) | The icons of the "how it works" drawing and of the "what it does" table, under the ISC License. |
 
 </details>
 

@@ -1,5 +1,6 @@
 // Everything the README shows, made again from the real thing: `pnpm readme`.
 //  - the "how it works" drawing, wide and narrow, light and dark;
+//  - the icons of the "what it does" table;
 //  - the screenshots of the demo app, taken in a browser without a window.
 // The pictures land in .github/readme/. Pass --drawing to skip the screenshots, or
 // --only=quickstart,library to take just those again.
@@ -118,6 +119,26 @@ for (const theme of /** @type {const} */ (["light", "dark"])) {
 }
 console.log("Drawing: how-it-works-{light,dark}{,-narrow}.svg");
 
+// ---------- the icons of the "what it does" table ----------
+
+// One per thing the plugin does, in the accent of the brand, which reads on a light page and on a
+// dark one. Also from Lucide.
+const FEATURES = {
+  style: '<path d="m14.622 17.897-10.68-2.913"/><path d="M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z"/><path d="M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15"/>',
+  structure: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>',
+  moods: `<path d="M12 22a1 1 0 0 1 0-20a10 9 0 0 1 10 9a5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="${ACCENT}"/><circle cx="17.5" cy="10.5" r=".5" fill="${ACCENT}"/><circle cx="6.5" cy="12.5" r=".5" fill="${ACCENT}"/><circle cx="8.5" cy="7.5" r=".5" fill="${ACCENT}"/>`,
+  updates: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  zones: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  back: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  panel: '<path d="M10 5H3m9 14H3M14 3v4m2 10v4m5-9h-9m9 7h-5m5-14h-7m-6 5v4m0-2H3"/>',
+  agents: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2m16 0h2m-7-1v2m-6-2v2"/>',
+};
+for (const [name, shape] of Object.entries(FEATURES)) {
+  await writeFile(path.join(out, `icon-${name}.svg`),
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${ACCENT}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${shape}</svg>\n`);
+}
+console.log(`Icons: icon-{${Object.keys(FEATURES).join(",")}}.svg`);
+
 // ---------- the screenshots ----------
 
 if (!process.argv.includes("--drawing")) {
@@ -146,7 +167,7 @@ if (!process.argv.includes("--drawing")) {
     const all = "rounder-corners,sneaky-tracker,square-buttons,bigger-text,today-first";
     await shot("demo-light", `?mood=bright&on=${all}`, { scheme: "light" });
     await shot("demo-dark", `?mood=calm&on=${all}`, { scheme: "dark" });
-    // One per mood, the app alone.
+    // Four of the example moods, the app alone.
     for (const mood of ["calm", "focus", "dream", "bright"]) {
       await shot(`mood-${mood}`, `?panel=off&mood=${mood}&on=rounder-corners`, { width: 1000, height: 640 });
     }
