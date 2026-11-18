@@ -1,6 +1,6 @@
 // For apps and tools that run on Node (Electron, a CLI, a build step): reading the mods folder of
 // a person and noticing when it changes. A window never imports this file.
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readdir, readFile, lstat } from "node:fs/promises";
 import { watch } from "node:fs";
 import path from "node:path";
 import { FILE_FOR_TYPE } from "./manifest.js";
@@ -61,7 +61,8 @@ export async function readMod(folder) {
  */
 async function readSmall(file, limit) {
   try {
-    const info = await stat(file);
+    // lstat, not stat: a link is not a file, so a mod cannot make the app read something else.
+    const info = await lstat(file);
     if (!info.isFile()) return { ok: false, error: MISSING };
     if (info.size > limit) return { ok: false, error: `is ${Math.round(info.size / 1024)} KB, the limit is ${Math.round(limit / 1024)} KB` };
     return { ok: true, text: await readFile(file, "utf8") };

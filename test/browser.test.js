@@ -4,6 +4,9 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { findBrowser, launch } from "../scripts/lib/browser.mjs";
 import { startServer } from "../scripts/serve.mjs";
+import { MOODS } from "../skills/moods/runtime/index.js";
+
+const MOODS_BRIGHT = /** @type {string} */ (MOODS.find((m) => m.id === "bright")?.files?.["mood.json"]);
 
 const skip = findBrowser() ? false : "no Chrome, Edge or Chromium on this computer";
 /** @type {Awaited<ReturnType<typeof launch>>} */
@@ -136,6 +139,125 @@ test("structure, a refused mod, a start without mods and the way back", { skip }
       bg: look("body", ["background-color"])["background-color"],
     }));
     assert.deepEqual(back, { styles: 0, theme: "light", bg: "rgb(255, 255, 255)" });
+    assert.deepEqual(page.errors, []);
+  } finally {
+    await page.close();
+  }
+});
+
+// The quickstart app is the whole integration: `startMods({ contract })` and the <moods-panel> tag.
+const QUICK = "/examples/quickstart/";
+const inPanel = (/** @type {string} */ code) => `(() => { const panel = document.querySelector("moods-panel"); const root = panel.shadowRoot; ${code} })()`;
+
+async function quick(query = "") {
+  const page = await browser.newPage({ width: 1280, height: 900, colorScheme: "light" });
+  await page.goto(`${server.url}${QUICK}${query}`);
+  await page.waitFor("window.ready");
+  return page;
+}
+
+test("two lines and a tag: the moods, the person's mods, what is remembered and the way back", { skip }, async () => {
+  const page = await quick();
+  try {
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.goto(`${server.url}${QUICK}`);
+    await page.waitFor("window.ready");
+    const own = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    assert.equal(own, "rgb(251, 250, 247)");
+    // The panel offers the app's own look and the four moods, and a click on one changes the app.
+    assert.deepEqual(await page.evaluate(inPanel('return [...root.querySelectorAll(".mood")].map((b) => b.textContent)')),
+      ["Original", "Calm", "Focus", "Dream", "Bright"]);
+    await page.evaluate(inPanel('root.querySelectorAll(".mood")[1].click()'));
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(16, 33, 38)");
+    assert.equal(await page.evaluate(inPanel('return root.querySelector(\'.mood[aria-pressed="true"]\').textContent')), "Calm");
+    // The button that turns every mod off keeps the app's own colors under any mood.
+    const wayBack = await page.evaluate(() => {
+      const c = getComputedStyle(document.querySelector('[data-no-mods="way-back"]'));
+      return [c.color, c.backgroundColor];
+    });
+    assert.deepEqual(wayBack, ["rgb(30, 27, 36)", "rgb(255, 255, 255)"]);
+
+    // A mod of the person: kept in this browser, applied at once, listed with its switch.
+    const added = await page.evaluate(async () => {
+      const get = async (/** @type {string} */ file) => (await fetch(file)).text();
+      const row = window.mods.add({ id: "rounder-corners", manifest: await get("mods/rounder-corners/mod.json"), files: { "style.css": await get("mods/rounder-corners/style.css") } });
+      return [row.state, getComputedStyle(document.querySelector(".go")).borderTopLeftRadius];
+    });
+    assert.deepEqual(added, ["applied", "16px"]);
+    // One that the gate refuses is not kept, and the person gets the reason.
+    const refused = await page.evaluate(() => {
+      const row = window.mods.add({ manifest: { format: 1, id: "tracker", type: "style", request: "x", contract: "^1.0" }, files: { "style.css": "a { background: url(https://tracker.example/p.png) }" } });
+      return [row.state, row.notes[0], window.mods.list.some((m) => m.id === "tracker")];
+    });
+    assert.deepEqual(refused, ["rejected", "url(https://tracker.example/p.png) is not allowed: only data: URIs and #fragments", false]);
+    assert.deepEqual(await page.evaluate(inPanel('return [...root.querySelectorAll(".mod b")].map((b) => b.textContent)')), ["Rounder corners"]);
+
+    // It is all still there after closing and opening the app.
+    await page.goto(`${server.url}${QUICK}`);
+    await page.waitFor("window.ready");
+    assert.deepEqual(await page.evaluate(() => [window.mods.mood, getComputedStyle(document.body).backgroundColor, getComputedStyle(document.querySelector(".go")).borderTopLeftRadius]),
+      ["calm", "rgb(16, 33, 38)", "16px"]);
+    // The switch of a mod, and then the button that turns them all off and back on.
+    await page.evaluate(inPanel('root.querySelector(".switch").click()'));
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector(".go")).borderTopLeftRadius), "6px");
+    await page.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('[data-no-mods="way-back"]')).click());
+    assert.deepEqual(await page.evaluate(() => [getComputedStyle(document.body).backgroundColor, document.querySelector('[data-no-mods="way-back"]').textContent, document.querySelectorAll("style[data-mods-runtime]").length]),
+      [own, "Turn mods back on", 0]);
+    await page.evaluate(() => /** @type {HTMLElement} */ (document.querySelector('[data-no-mods="way-back"]')).click());
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(16, 33, 38)");
+
+    // From outside the window: the address that starts the app with every mod off.
+    await page.goto(`${server.url}${QUICK}?mods=off`);
+    await page.waitFor("window.ready");
+    assert.deepEqual(await page.evaluate(() => [window.mods.safeStart, getComputedStyle(document.body).backgroundColor, window.mods.list.every((m) => m.state === "off")]),
+      [true, own, true]);
+    assert.deepEqual(page.errors, []);
+  } finally {
+    await page.evaluate(() => { localStorage.clear(); });
+    await page.close();
+  }
+});
+
+test("a mood reaches an app that keeps only the channels of its colors, and looking again costs nothing", { skip }, async () => {
+  const page = await quick("?mods=off");
+  try {
+    const result = await page.evaluate(async () => {
+      window.mods.stop();
+      const { createModHost, MOODS } = await import("/skills/moods/runtime/index.js");
+      const box = document.createElement("div");
+      box.style.cssText = "background: hsl(var(--kit-bg)); color: rgb(var(--kit-fg)); border: 1px solid rgb(var(--kit-line))";
+      document.body.append(box);
+      document.documentElement.style.setProperty("--kit-bg", "0 0% 100%");
+      document.documentElement.style.setProperty("--kit-fg", "0 0 0");
+      document.documentElement.style.setProperty("--kit-line", "0, 0, 0");
+      const plain = (/** @type {string} */ variable) => variable;
+      const host = createModHost({
+        contract: {
+          contract: "1.0.0",
+          roles: {
+            background: { variable: "--kit-bg", as: "hsl" }, text: { variable: "--kit-fg", as: "rgb" }, border: { variable: "--kit-line", as: "rgb-commas" },
+            surface: plain("--panel"), muted: plain("--fg-quiet"), accent: plain("--accent"), accentText: plain("--on-accent"),
+          },
+        },
+      });
+      const states = host.apply(MOODS).map((v) => v.state);
+      const look = getComputedStyle(box);
+      const painted = [look.backgroundColor, look.color, look.borderTopColor];
+      // Applying the same mods again reviews nothing and leaves the same <style> elements in place.
+      const before = [...document.querySelectorAll("style[data-mods-runtime]")];
+      host.refresh();
+      const after = [...document.querySelectorAll("style[data-mods-runtime]")];
+      return { states, painted, kept: before.length > 0 && before.every((el, i) => el === after[i] && !el.disabled) };
+    });
+    assert.deepEqual(result.states, ["applied", "applied", "applied", "applied"]);
+    // The last mood of the list is on top: Bright. Its colors, whatever way the app keeps them.
+    const near = (/** @type {string} */ got, /** @type {number[]} */ want) => (got.match(/[\d.]+/g) ?? []).slice(0, 3).every((n, i) => Math.abs(Number(n) - want[i]) <= 1);
+    const bright = JSON.parse(MOODS_BRIGHT).colors;
+    const rgb = (/** @type {string} */ hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    assert.ok(near(result.painted[0], rgb(bright.background)), `background ${result.painted[0]}`);
+    assert.ok(near(result.painted[1], rgb(bright.text)), `text ${result.painted[1]}`);
+    assert.ok(near(result.painted[2], rgb(bright.border)), `border ${result.painted[2]}`);
+    assert.equal(result.kept, true);
     assert.deepEqual(page.errors, []);
   } finally {
     await page.close();

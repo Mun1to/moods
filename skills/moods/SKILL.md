@@ -1,68 +1,75 @@
 ---
 name: moods
-description: Adds user mods to an open source app (moods, style mods and structure mods that survive every update), or makes a mod for an app that already supports them. Use it when a maintainer asks to "let users mod this app", "add themes or mods", "make the app customizable without forks", or when someone asks for a change to an app they use ("make the buttons rounder", "hide this", "a darker theme") and the app has a contract.json for mods.
+description: Adds user mods to an open source app (moods, style mods and structure mods that survive every update), makes a mod for an app that already supports them, or turns the changes of a fork into mods. Use it when a maintainer asks to "let users mod this app", "add themes or mods", "make the app customizable without forks", when someone asks for a change to an app they use ("make the buttons rounder", "hide this", "a darker theme") and the app has a contract.json for mods, or when someone edited or forked such an app and wants to keep getting its updates.
 ---
 
 # Mods for open source apps
 
-Two jobs, one format. Everything they need is in this folder:
+Three jobs, one format. Everything they need is in this folder:
 
 - `reference/format.md`: the format, the contract of an app and every rule. Read it first.
 - `runtime/`: the plugin. Plain JavaScript modules, no dependencies, no build step. `index.js` is
   for the window; `node.js` reads and watches the mods folder from Node.
-- `moods/`: four moods (Calm, Focus, Dream and Bright) to ship with the app.
-- `templates/`: a starting `contract.json` and `MODS.md`, the guide an app gives to its users.
-- `scripts/check.mjs`: checks mods against a contract without opening the app.
+- `scripts/init.mjs`: gets an app ready in one go. `scripts/check.mjs`: checks mods against a
+  contract without opening the app. `scripts/forks.mjs`: what the forks of an app changed.
+- `templates/`: the folder readers for Tauri (`read_mods.rs`) and Python (`read_mods.py`), `MODS.md`
+  (the guide an app gives its users), the note for coding agents and the text of a contract request.
+- `moods/`: the four built-in moods (Calm, Focus, Dream and Bright), as mod folders.
 
 ## Job 1: a maintainer wants their app to accept mods
 
-1. **Find where the app paints.** The plugin works in any web window: Tauri, Electron, pywebview,
-   an extension or a web app. Look at how the app sets its colors and sizes today (CSS variables,
-   a theme attribute, inline styles): the plugin copes with all three.
-2. **Copy `runtime/` into the app's source**, for example `src/mods/`. Do not edit it: an update
-   of the plugin is copying the folder again.
-3. **Write `contract.json`**, starting from `templates/contract.json`. List only what you promise
-   to keep:
-   - the seven mood roles (`background`, `surface`, `text`, `muted`, `accent`, `accentText`,
-     `border`) mapped to the app's own variables, so every mood works;
-   - the variables people may change, each with `since` and one line of `about`;
-   - pieces: mark elements with `data-piece="name"`, never rely on class names;
-   - zones: a flex or grid container with `data-zone="name"` whose children are pieces;
-   - `noMods`: what no mod may touch (keys, permissions, payments, and the button that turns
-     every mod off), each marked with `data-no-mods="name"`;
+1. **Run `node scripts/init.mjs <the app's folder>`** and read what it prints. It copies `runtime/`
+   into the app (`src/mods/`), reads the app's styles to draft `contract.json`, writes `MODS.md`
+   and adds a note to the app's `AGENTS.md`. Running it again updates the plugin and keeps what the
+   maintainer edited. `--dry-run` only says what it would do.
+2. **Go through the drafted `contract.json` with the maintainer.** Every name in it is a promise:
+   take out what they would not keep.
+   - The seven mood roles (`background`, `surface`, `text`, `muted`, `accent`, `accentText`,
+     `border`) must all be mapped, or no mood works. For a role `init` could not find, give that
+     color a variable in the app's styles, use it where the color is painted, and map it. If the
+     app keeps only channels (`--background: 0 0% 100%`), the role says so: see the format.
+   - Pieces: put `data-piece="name"` on the parts people may restyle, never rely on class names.
+   - Zones: a flex or grid container with `data-zone="name"` whose children are pieces.
+   - `noMods`: what no mod may touch (keys, permissions, payments), each marked with
+     `data-no-mods="name"`.
    - `root`, only if the app keeps its variables on an element that is not the page root.
    Version it with semver: adding is minor, deprecating is minor plus an alias, removing is major.
-4. **Read the mods from the person's data folder, never the install folder.** One sub-folder per
-   mod: read `mod.json` (64 KB at most) and the one file its type needs (256 KB at most), do not
-   follow links, and hand the window `{ id, manifest, files }` for each.
-   - On Node or Electron this is `readModsFolder(dir)` from `runtime/node.js`, and
-     `watchModsFolder(dir, onChange)` tells you when to read again.
-   - On Tauri, pywebview or anything else, read the folder in the backend and pass the same shape.
-5. **Apply them after the first render:**
+3. **Start it where the app starts its window**, after the first render:
    ```js
-   import { createModHost } from "./mods/index.js";
+   import { startMods } from "./mods/index.js";
+   import contract from "./mods/contract.json";
 
-   const host = createModHost({
-     contract,
-     // Optional: put the app's own dark or light look under the mood that is on.
-     onScheme: (scheme) => setAppTheme(scheme ?? systemTheme()),
-   });
-   const verdicts = host.apply(mods.map((mod) => ({ ...mod, enabled: !turnedOff.has(mod.id) })));
+   await startMods({ contract });
    ```
-   `apply` never throws because of a mod. Call it again when a file changes. It looks again by
-   itself when the system goes dark or light and when the root element changes; after any other
-   change to the app's own look, call `host.refresh()`.
-6. **Give people a screen for it:** a mood picker, every mod with its switch, its `request`, its
-   state in words and its `notes` as they come (they say what to fix), and one button that turns
-   every mod off. `examples/demo` in the plugin's repository is a full example.
-7. **Give them a way back that no mod can break:** a start without mods from outside the window
-   (a command-line flag, a menu or a tray item) that calls `host.apply(mods, { off: true })`.
-8. **Ship the four moods** from `moods/` as built-in mods, and write `MODS.md` in the app's
-   repository from `templates/MODS.md`, so anyone's agent can make a mod for the app.
-9. **Close the network:** a Content Security Policy without remote images or fonts, as a second
+   That already ships the four moods, remembers what the person picked and applies it. Add
+   `onScheme: (scheme) => setAppTheme(scheme ?? systemTheme())` when the app has its own dark and
+   light looks, so the right one sits under the mood that is on.
+4. **Give it the person's mods folder**, in their data folder, never in the install folder:
+   - Tauri: copy `templates/read_mods.rs` (its first lines say how) and pass
+     `mods: () => invoke("read_mods")`.
+   - Python (pywebview): `templates/read_mods.py`, exposed to the window, passed the same way.
+   - Node or Electron: `readModsFolder(dir)` from `runtime/node.js`; `watchModsFolder(dir, onChange)`
+     says when to call `mods.reload()`.
+   - A web app with no folder: nothing to do. People add mods in the panel and the browser keeps them.
+   Pass `folder` (and `openFolder`) too, so the panel can say where the mods live. The plugin reads
+   the folder again when the window gets the focus back: an agent writes a mod, the person returns
+   to the app and it is on.
+5. **Put the panel in the app's settings:** `<moods-panel></moods-panel>`. It lists the moods and
+   the mods with their switches, says in words why one does not apply, and has the button that
+   turns them all off. Its words are in `panel.words`, to translate.
+6. **Give people a way back that no mod can break:** a start without mods from outside the window
+   (a command-line flag, a menu or a tray item) that passes `off: true` to `startMods`. A web app
+   already has one: `?mods=off` in its address.
+7. **Fill the blanks of `MODS.md`** (they are between `<` and `>`) and leave the note in
+   `AGENTS.md`: it is what makes the agent of someone who wants the app their way write a mod
+   instead of editing the app.
+8. **Close the network:** a Content Security Policy without remote images or fonts, as a second
    lock behind the plugin's gate.
-10. **Check it:** `node scripts/check.mjs contract.json <a folder of example mods>`, try the four
-    moods and one style mod in the running app, and update the app once with them on.
+9. **Check it:** `node scripts/check.mjs <contract.json> <a folder of example mods>`, try the four
+   moods and one style mod in the running app, and update the app once with them on.
+
+To choose what the contract offers first, `node scripts/forks.mjs <owner/repo>` lists what the
+forks of the app changed most: the style files and the variables they kept editing.
 
 ## Job 2: someone wants a mod for an app that supports them
 
@@ -70,7 +77,7 @@ Two jobs, one format. Everything they need is in this folder:
    safe to use.
 2. **Pick the type:** `mood` for colors only, `style` for variables and pieces, `structure` to order
    or hide pieces of a zone.
-3. **Create `<the app's data folder>/mods/<id>/`** with `mod.json`:
+3. **Create `<the app's mods folder>/<id>/`** with `mod.json`:
    ```json
    { "format": 1, "id": "rounder-corners", "name": "Rounder corners", "type": "style",
      "request": "<what the person asked, in their words>", "contract": "^1.1",
@@ -82,5 +89,19 @@ Two jobs, one format. Everything they need is in this folder:
    `url()` (only `data:`), never `@import`, never a backslash: the gate refuses the whole file.
 5. **Check it before opening the app:** `node scripts/check.mjs <contract.json> <the mod folder>`.
    `does not apply` and `refused` come with the reason: fix that and check again.
-6. **After an app update,** if the mod `needs an update`, make it again from its `request` against
+6. **If the contract has no name for what they want, do not edit the app.** Say what is missing and
+   write the request for the maintainer from `templates/contract-request.md`. Editing the source is
+   a fork: it works today and loses every update.
+7. **After an app update,** if the mod `needs an update`, make it again from its `request` against
    the new contract.
+
+## Job 3: someone edited or forked the app, and wants its updates back
+
+1. **See what they changed:** the diff of their copy against the app it came from
+   (`git diff <upstream>...HEAD --stat`, then the style and screen files).
+2. **Sort every change.** Colors, letter, sizes and corners become a mood or a style mod, with the
+   names of the contract. Order and what shows become a structure mod. Behavior cannot be a mod
+   yet: say so plainly. For what has no name in the contract, write a contract request.
+3. **Write the mods and check them** with `scripts/check.mjs`.
+4. **Ask before touching their copy.** With their yes, put it back on the app's own code, turn the
+   mods on, and compare with them what looks the same and what did not make it.

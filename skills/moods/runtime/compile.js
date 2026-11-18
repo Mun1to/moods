@@ -4,14 +4,16 @@ import { readManifest, FILE_FOR_TYPE } from "./manifest.js";
 import { checkStyle, namesInStyle } from "./gate.js";
 import { walkStyle } from "./css.js";
 import { satisfies } from "./semver.js";
-import { contrast } from "./color.js";
+import { contrast, colorAs, COLOR_FORMATS } from "./color.js";
 
 export const ROLES = ["background", "surface", "text", "muted", "accent", "accentText", "border"];
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const NO_MODS = "[data-no-mods]";
 
 /**
- * @typedef {{ contract: string, app?: string, root?: string, roles?: Record<string, string>,
+ * @typedef {string | { variable: string, as?: string }} Role the app's variable for a mood role, and
+ *   how the app keeps a color in it when it is not a plain color (`hsl`, `rgb` or `rgb-commas`)
+ * @typedef {{ contract: string, app?: string, root?: string, roles?: Record<string, Role>,
  *   variables?: Record<string, { since?: string, about?: string }>,
  *   pieces?: Record<string, { since?: string, about?: string }>,
  *   zones?: Record<string, { since?: string, about?: string, pieces?: string[] }>,
@@ -100,9 +102,33 @@ function missingTouches(touches, contract) {
   });
 }
 
+/**
+ * The app's variable for one mood role, and how the app writes a color in it.
+ * @param {Contract} contract
+ * @param {string} role
+ * @returns {{ variable: string, as: string } | null}
+ */
+export function roleOf(contract, role) {
+  const entry = contract.roles?.[role];
+  if (typeof entry === "string" && entry) return { variable: entry, as: "hex" };
+  if (entry && typeof entry === "object" && typeof entry.variable === "string" && entry.variable) {
+    return { variable: entry.variable, as: entry.as ?? "hex" };
+  }
+  return null;
+}
+
+/**
+ * Every variable the mood roles of an app write to.
+ * @param {Contract} contract
+ * @returns {string[]}
+ */
+export function roleVariables(contract) {
+  return Object.keys(contract.roles ?? {}).flatMap((role) => roleOf(contract, role)?.variable ?? []);
+}
+
 /** @param {string} name @param {Contract} contract */
 function knownVariable(name, contract) {
-  return Boolean(contract.variables?.[name]) || Object.values(contract.roles ?? {}).includes(name) || name.startsWith("--mod-");
+  return Boolean(contract.variables?.[name]) || roleVariables(contract).includes(name) || name.startsWith("--mod-");
 }
 
 /**
@@ -119,15 +145,22 @@ export function compileMood(text, contract) {
   } catch {
     return { state: "rejected", notes: ["mood.json is not valid JSON"] };
   }
-  const roles = contract.roles ?? {};
+  const roles = Object.fromEntries(ROLES.map((r) => [r, roleOf(contract, r)]));
   const unmapped = ROLES.filter((r) => !roles[r]);
   if (unmapped.length) return { state: "broken", notes: [`the app does not map the roles ${unmapped.join(", ")}`] };
+  const unknown = ROLES.filter((r) => !COLOR_FORMATS.includes(/** @type {{ as: string }} */ (roles[r]).as));
+  if (unknown.length) {
+    return { state: "broken", notes: unknown.map((r) => `the app keeps ${r} as ${roles[r]?.as}, and this plugin writes ${COLOR_FORMATS.join(", ")}`) };
+  }
   const colors = mood?.colors ?? {};
   const bad = ROLES.filter((r) => typeof colors[r] !== "string" || !HEX.test(colors[r]));
   if (bad.length) return { state: "rejected", notes: [`mood.json needs a #RRGGBB color for ${bad.join(", ")}`] };
   if (mood.scheme !== "dark" && mood.scheme !== "light") return { state: "rejected", notes: ["scheme must be dark or light"] };
   const notes = moodContrastNotes(colors);
-  const decls = ROLES.map((r) => `${roles[r]}: ${colors[r]} !important;`).join(" ");
+  const decls = ROLES.map((r) => {
+    const { variable, as } = /** @type {{ variable: string, as: string }} */ (roles[r]);
+    return `${variable}: ${colorAs(colors[r], as)} !important;`;
+  }).join(" ");
   const root = contract.root ?? ":root";
   const css = root === ":root"
     ? `:root { color-scheme: ${mood.scheme} !important; ${decls} }`

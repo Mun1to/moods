@@ -1,5 +1,5 @@
 // Putting reviewed mods on a page. The only part of the plugin that touches the DOM.
-import { review } from "./compile.js";
+import { review, roleVariables } from "./compile.js";
 
 const ORDER = { mood: 0, style: 1, structure: 2 };
 const MARK = "data-mods-runtime";
@@ -42,24 +42,59 @@ export function createModHost({ contract, document: doc = globalThis.document, o
   let timer = 0;
   let lastRefresh = 0;
   let inline = "";
+  /** @type {Map<string, Verdict>} */
+  let reviewed = new Map();
 
-  const pinned = [...new Set([...Object.keys(contract.variables ?? {}), ...Object.values(contract.roles ?? {})])];
+  const pinned = [...new Set([...Object.keys(contract.variables ?? {}), ...roleVariables(contract)])];
 
   function rootElement() {
     const selector = contract.root ?? ":root";
     return (selector === ":root" ? null : doc.querySelector(selector)) ?? doc.documentElement;
   }
 
+  const ownStyles = () => /** @type {HTMLStyleElement[]} */ ([...doc.querySelectorAll(`style[${MARK}]`)]);
+
   function removeStyles() {
-    for (const el of doc.querySelectorAll(`style[${MARK}]`)) el.remove();
+    for (const el of ownStyles()) el.remove();
   }
 
-  /** @param {string} name @param {string} css */
-  function addStyle(name, css) {
-    const style = doc.createElement("style");
-    style.setAttribute(MARK, name);
-    style.textContent = css;
-    doc.head.append(style);
+  /**
+   * Puts these styles on the page, in this order. When they are the ones already there (the usual
+   * case when the app only changed its own look), they are switched back on instead of parsed again.
+   * @param {{ name: string, css: string }[]} wanted
+   */
+  function setStyles(wanted) {
+    const current = ownStyles();
+    const same = current.length === wanted.length
+      && current.every((el, i) => el.getAttribute(MARK) === wanted[i].name && el.textContent === wanted[i].css);
+    if (same) {
+      for (const el of current) el.disabled = false;
+      return;
+    }
+    removeStyles();
+    for (const { name, css } of wanted) {
+      const style = doc.createElement("style");
+      style.setAttribute(MARK, name);
+      style.textContent = css;
+      doc.head.append(style);
+    }
+  }
+
+  /**
+   * What tells one review from another: the same mod, asked the same way, gets the same verdict,
+   * so it is not reviewed twice.
+   * @param {ModInput} mod
+   * @param {boolean} off
+   * @param {boolean} scope
+   */
+  function keyOf(mod, off, scope) {
+    try {
+      const manifest = typeof mod.manifest === "string" ? mod.manifest : JSON.stringify(mod.manifest);
+      const files = Object.entries(mod.files ?? {}).map(([name, text]) => `${name}\n${text}`).join("\0");
+      return [off ? 1 : 0, scope ? 1 : 0, mod.enabled === false ? 0 : 1, mod.error ?? "", mod.id ?? "", manifest, files].join("\0");
+    } catch {
+      return "";
+    }
   }
 
   /**
@@ -139,17 +174,27 @@ export function createModHost({ contract, document: doc = globalThis.document, o
     working = true;
     try {
       last = { mods, options };
-      removeStyles();
+      // Off, not out: the app shows its own look while the pins are read, and nothing is parsed twice.
+      for (const el of ownStyles()) el.disabled = true;
       const scope = typeof (/** @type {any} */ (view)?.CSSScopeRule) === "function";
+      /** @type {Map<string, Verdict>} */
+      const seen = new Map();
       const verdicts = mods.map((mod) => {
-        try {
-          return review(mod, contract, { off: options.off, scope });
-        } catch (error) {
-          const id = typeof mod?.id === "string" ? mod.id : "unknown";
-          const reason = error instanceof Error ? error.message : String(error);
-          return /** @type {Verdict} */ ({ id, name: id, type: "unknown", state: "rejected", notes: [`could not be read: ${reason}`] });
+        const key = keyOf(mod, Boolean(options.off), scope);
+        let verdict = key ? reviewed.get(key) : undefined;
+        if (!verdict) {
+          try {
+            verdict = review(mod, contract, { off: options.off, scope });
+          } catch (error) {
+            const id = typeof mod?.id === "string" ? mod.id : "unknown";
+            const reason = error instanceof Error ? error.message : String(error);
+            verdict = /** @type {Verdict} */ ({ id, name: id, type: "unknown", state: "rejected", notes: [`could not be read: ${reason}`] });
+          }
         }
+        if (key) seen.set(key, verdict);
+        return verdict;
       });
+      reviewed = seen;
       const live = verdicts
         .map((v, i) => ({ v, i }))
         .filter(({ v }) => v.css && (v.state === "applied" || v.state === "deprecated"))
@@ -165,12 +210,13 @@ export function createModHost({ contract, document: doc = globalThis.document, o
       // The pins are read now: every mod is off the page and the app shows its own look.
       const pins = live.length ? pinZonesWithoutMods() : "";
       // One <style> per mod: nothing a mod holds can swallow the next one, or the pins.
-      for (const { v } of live) addStyle(v.id, `/* ${v.type}: ${v.id} */\n${v.css}`);
-      if (pins) addStyle("zones-without-mods", `/* zones without mods keep the app's own values */\n${pins}`);
+      const wanted = live.map(({ v }) => ({ name: v.id, css: `/* ${v.type}: ${v.id} */\n${v.css}` }));
+      if (pins) wanted.push({ name: "zones-without-mods", css: `/* zones without mods keep the app's own values */\n${pins}` });
+      setStyles(wanted);
       inline = inlineValues();
       lastRefresh = Date.now();
       watch();
-      return verdicts.map(({ css, ...rest }) => rest);
+      return verdicts.map(({ css, ...rest }) => ({ ...rest, notes: [...rest.notes] }));
     } finally {
       observer?.takeRecords();
       working = false;
@@ -190,6 +236,7 @@ export function createModHost({ contract, document: doc = globalThis.document, o
   function clear() {
     unwatch();
     last = null;
+    reviewed = new Map();
     removeStyles();
     if (onScheme) {
       try {

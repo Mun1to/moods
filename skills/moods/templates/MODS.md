@@ -51,6 +51,12 @@ There are three kinds: `mood` (seven colors, in `mood.json`), `style` (CSS, in `
 - Load anything from the internet or run code.
 - Touch <the parts the app keeps for itself: keys, permissions, payments>.
 
+## If a mod cannot do what you want
+
+A mod can only use the names in `contract.json`. If your change needs one that is not there, open
+an issue that says what you wanted and which part of the app it is about. A fork of <App> would
+work today and miss every update after it; a new name in the contract works for everyone.
+
 ## If something looks wrong
 
 Turn every mod off in **<Settings > Mods>**, or start the app with <the flag or menu that starts

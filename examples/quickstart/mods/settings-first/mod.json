@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "settings-first",
+  "name": "Settings first",
+  "type": "structure",
+  "request": "Put the settings on the left.",
+  "contract": "^1.0",
+  "touches": ["zone:page"]
+}

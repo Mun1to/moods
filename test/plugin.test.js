@@ -2,12 +2,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle } from "../skills/moods/runtime/index.js";
+import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, MOODS } from "../skills/moods/runtime/index.js";
+import { moodsModule } from "../scripts/moods.mjs";
 import { readModsFolder, watchModsFolder } from "../skills/moods/runtime/node.js";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -217,4 +218,143 @@ test("the command-line check says the same as the app and fails when a mod does"
   const one = run(here("../examples/demo/contract.json"), here("../examples/demo/user-mods/rounder-corners"), "--json");
   assert.equal(one.status, 0);
   assert.equal(JSON.parse(one.stdout)[0].state, "applied");
+});
+
+test("a mood is written the way the app keeps its colors: plain, or only the channels", () => {
+  assert.equal(colorAs("#102126", "rgb"), "16 33 38");
+  assert.equal(colorAs("#102126", "rgb-commas"), "16, 33, 38");
+  assert.equal(colorAs("#ffffff", "hsl"), "0 0% 100%");
+  assert.equal(colorAs("#ff0000", "hsl"), "0 100% 50%");
+  const colors = { background: "#102126", surface: "#17323B", text: "#DCEFEF", muted: "#8FB3B6", accent: "#6FD3C5", accentText: "#0B1F1D", border: "#28505A" };
+  const mood = JSON.stringify({ scheme: "dark", colors });
+  // The way many apps do it: `--background: 0 0% 100%`, used as `hsl(var(--background))`.
+  const channels = { ...contract, roles: { ...contract.roles, background: { variable: "--background", as: "hsl" }, accent: { variable: "--brand", as: "rgb" } } };
+  const out = compileMood(mood, channels);
+  assert.match(out.css, /--background: [\d.]+ [\d.]+% [\d.]+% !important;/);
+  assert.match(out.css, /--brand: 111 211 197 !important;/);
+  assert.match(out.css, /--panel: #17323B !important;/);
+  // A style mod may set those variables too: they are names of the contract.
+  assert.equal(review({ manifest: manifest(), files: { "style.css": ":root { --background: 0 0% 0% }" } }, channels).state, "applied");
+  const odd = compileMood(mood, { ...contract, roles: { ...contract.roles, text: { variable: "--fg", as: "oklch" } } });
+  assert.deepEqual([odd.state, odd.notes[0]], ["broken", "the app keeps text as oklch, and this plugin writes hex, hsl, rgb, rgb-commas"]);
+});
+
+test("the moods a window ships are the mood folders, letter by letter", async () => {
+  assert.equal(await readFile(here("../skills/moods/runtime/moods.js"), "utf8"), await moodsModule(), "run `pnpm moods`");
+  assert.deepEqual(MOODS.map((m) => m.id), ["calm", "focus", "dream", "bright"]);
+  for (const mood of MOODS) assert.equal(review(mood, contract).state, "applied", mood.id);
+});
+
+test("one command gets an app ready: the plugin, a drafted contract, the guide and the note for agents", async () => {
+  const app = await mkdtemp(path.join(tmpdir(), "mods-init-"));
+  const forAgents = path.join(app, "AGENTS.md");
+  const init = () => spawnSync(process.execPath, [here("../skills/moods/scripts/init.mjs"), app], { encoding: "utf8" });
+  try {
+    await mkdir(path.join(app, "src"));
+    await mkdir(path.join(app, "node_modules", "other"), { recursive: true });
+    await writeFile(path.join(app, "package.json"), JSON.stringify({ name: "tiny-app", version: "2.0.0" }));
+    await writeFile(path.join(app, "node_modules", "other", "x.css"), ":root { --bg: red; --text: blue }");
+    await writeFile(forAgents, "# Tiny app\n\nUse pnpm.\n");
+    await writeFile(path.join(app, "src", "index.html"), '<header data-piece="toolbar"></header><section data-no-mods="keys"></section>');
+    // The way an app made with a popular component kit keeps its colors: only the channels.
+    await writeFile(path.join(app, "src", "styles.css"), `:root {
+  --background: 0 0% 100%; --foreground: 222.2 47.4% 11.2%; --card: 0 0% 98%; --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%; --primary: 222.2 47.4% 11.2%; --primary-foreground: 210 40% 98%;
+  --accent: 210 40% 96.1%; --border: 214.3 31.8% 91.4%; --radius: 0.5rem; --tw-ring: 1px;
+}
+body { background: hsl(var(--background)); color: hsl(var(--foreground)); border-radius: var(--radius); }`);
+    const first = init();
+    assert.equal(first.status, 0, first.stderr);
+    const drafted = JSON.parse(await readFile(path.join(app, "src", "mods", "contract.json"), "utf8"));
+    assert.equal(drafted.app, "tiny-app");
+    assert.deepEqual(drafted.roles, {
+      background: { variable: "--background", as: "hsl" }, surface: { variable: "--card", as: "hsl" },
+      text: { variable: "--foreground", as: "hsl" }, muted: { variable: "--muted-foreground", as: "hsl" },
+      accent: { variable: "--primary", as: "hsl" }, accentText: { variable: "--primary-foreground", as: "hsl" },
+      border: { variable: "--border", as: "hsl" },
+    });
+    assert.ok(drafted.variables["--radius"], "the corner is offered");
+    assert.equal(drafted.variables["--tw-ring"], undefined);
+    assert.deepEqual([Object.keys(drafted.pieces), drafted.noMods], [["toolbar"], ["keys", "way-back"]]);
+    // The draft is good enough for every built-in mood to apply.
+    for (const mood of MOODS) assert.equal(review(mood, drafted).state, "applied", mood.id);
+    assert.match(await readFile(path.join(app, "src", "mods", "index.js"), "utf8"), /startMods/);
+    assert.match(await readFile(path.join(app, "MODS.md"), "utf8"), /^# Mods for tiny-app/);
+    const note = await readFile(forAgents, "utf8");
+    assert.match(note, /^# Tiny app\n\nUse pnpm\.\n\n<!-- mods:start -->\n## Changing how tiny-app looks: make a mod, do not edit the app/);
+    assert.match(note, /The names a mod may use are in `src\/mods\/contract\.json`/);
+
+    // Again: the plugin is copied again, and what the maintainer wrote is left alone.
+    await writeFile(path.join(app, "src", "mods", "contract.json"), JSON.stringify({ ...drafted, app: "Edited by hand" }));
+    const second = init();
+    assert.equal(second.status, 0, second.stderr);
+    assert.match(second.stdout, /Kept src\/mods\/contract\.json as it was/);
+    assert.equal(JSON.parse(await readFile(path.join(app, "src", "mods", "contract.json"), "utf8")).app, "Edited by hand");
+    assert.equal((await readFile(forAgents, "utf8")).match(/mods:start/g).length, 1);
+  } finally {
+    await rm(app, { recursive: true, force: true });
+  }
+});
+
+test("the folder readers for Node, Python and Rust say the same about the same folder", async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), "mods-readers-"));
+  const crate = await mkdtemp(path.join(tmpdir(), "mods-reader-crate-"));
+  try {
+    const put = async (name, files) => {
+      await mkdir(path.join(dir, name));
+      for (const [file, text] of Object.entries(files)) await writeFile(path.join(dir, name, file), text);
+    };
+    await put("good", { "mod.json": JSON.stringify(manifest({ id: "good", name: "Añil" })), "style.css": ":root { --radius-button: 2px }\n" });
+    await put("mood", { "mod.json": JSON.stringify(manifest({ id: "mood", type: "mood" })), "mood.json": "{}" });
+    await put("renamed", { "mod.json": JSON.stringify(manifest({ id: "another-name" })) });
+    await put("no-file", { "mod.json": JSON.stringify(manifest({ id: "no-file" })) });
+    await put("not-json", { "mod.json": "{ nope" });
+    await put("odd-type", { "mod.json": JSON.stringify(manifest({ id: "odd-type", type: "function" })) });
+    await put("empty", {});
+    await put(".hidden", { "mod.json": JSON.stringify(manifest({ id: "hidden" })) });
+    await put("huge", { "mod.json": JSON.stringify(manifest({ id: "huge" })), "style.css": "a{}".repeat(100_000) });
+    await put("linked", { "mod.json": JSON.stringify(manifest({ id: "linked" })) });
+    // A link in place of the file: no reader follows it. Where the system does not allow links, the file is just missing.
+    await symlink(path.join(dir, "good", "style.css"), path.join(dir, "linked", "style.css")).catch(() => {});
+    await writeFile(path.join(dir, "a-file.txt"), "not a mod");
+
+    const node = JSON.parse(JSON.stringify(await readModsFolder(dir)));
+    assert.deepEqual(node.map((m) => m.id), ["empty", "good", "huge", "linked", "mood", "no-file", "not-json", "odd-type", "renamed"]);
+    assert.deepEqual(node.find((m) => m.id === "linked").files, {}, "a link is not read");
+
+    const python = ["python3", "python", "py"].find((bin) => /^Python 3/.test(spawnSync(bin, ["--version"], { encoding: "utf8" }).stdout ?? ""));
+    if (python) {
+      const run = spawnSync(python, [here("../skills/moods/templates/read_mods.py"), dir], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
+      assert.deepEqual(JSON.parse(run.stdout), node, "Python");
+    } else {
+      t.diagnostic("Python is not on this computer: its reader was not compared");
+    }
+
+    if (spawnSync("cargo", ["--version"], { encoding: "utf8" }).status === 0) {
+      await mkdir(path.join(crate, "src"));
+      await writeFile(path.join(crate, "Cargo.toml"), '[package]\nname = "reader"\nversion = "0.0.0"\nedition = "2021"\n\n[dependencies]\nserde = { version = "1", features = ["derive"] }\nserde_json = "1"\n');
+      await writeFile(path.join(crate, "src", "main.rs"), `#[path = ${JSON.stringify(here("../skills/moods/templates/read_mods.rs"))}]
+mod read_mods;
+fn main() {
+    let dir = std::env::args().nth(1).unwrap();
+    println!("{}", serde_json::to_string(&read_mods::read_mods_folder(std::path::Path::new(&dir))).unwrap());
+}
+`);
+      const run = spawnSync("cargo", ["run", "--quiet", "--manifest-path", path.join(crate, "Cargo.toml"), "--", dir], {
+        encoding: "utf8", env: { ...process.env, CARGO_TARGET_DIR: path.join(tmpdir(), "mods-reader-target") },
+      });
+      if (run.status !== 0 && /failed to (download|get|fetch)|could not resolve|network/i.test(run.stderr)) {
+        t.diagnostic("cargo could not download serde: the Rust reader was not compared");
+      } else {
+        assert.equal(run.status, 0, run.stderr);
+        assert.deepEqual(JSON.parse(run.stdout), node, "Rust");
+      }
+    } else {
+      t.diagnostic("Rust is not on this computer: its reader was not compared");
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(crate, { recursive: true, force: true });
+  }
 });

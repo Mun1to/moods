@@ -1,0 +1,9 @@
+{
+  "format": 1,
+  "id": "rounder-corners",
+  "name": "Rounder corners",
+  "type": "style",
+  "request": "Make the corners rounder and the tasks a bit bigger.",
+  "contract": "^1.0",
+  "touches": ["--radius", "piece:task"]
+}

@@ -1,8 +1,11 @@
 {
   "name": "moods",
-  "description": "Adds user mods to an open source app (moods, style mods and structure mods that survive every update), or makes a mod for an app that already supports them.",
-  "version": "0.2.0",
-  "author": { "name": "Munir Torres", "url": "https://munito.dev" },
+  "description": "Adds user mods to an open source app (moods, style mods and structure mods that survive every update), makes a mod for an app that already supports them, or turns the changes of a fork into mods.",
+  "version": "0.3.0",
+  "author": {
+    "name": "Munir Torres",
+    "url": "https://munito.dev"
+  },
   "repository": "https://github.com/Mun1to/moods",
   "license": "MIT"
 }

@@ -1,6 +1,6 @@
 {
   "name": "moods",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Mods for any open source app: people make the app theirs, and their mods survive every update.",
   "license": "MIT",
@@ -9,6 +9,9 @@
     ".": "./skills/moods/runtime/index.js",
     "./node": "./skills/moods/runtime/node.js"
   },
+  "bin": {
+    "moods": "skills/moods/scripts/cli.mjs"
+  },
   "files": [
     "skills/moods"
   ],
@@ -16,6 +19,7 @@
     "test": "node --test \"test/*.test.js\"",
     "check": "tsc -p tsconfig.json",
     "demo": "node scripts/serve.mjs",
+    "moods": "node scripts/moods.mjs",
     "brand": "node scripts/brand.mjs",
     "readme": "node scripts/readme.mjs"
   },

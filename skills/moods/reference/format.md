@@ -141,6 +141,21 @@ version that added it:
 Versioning follows semver: adding a name is a minor version; deprecating one is a minor version
 and keeps an alias for a whole major version; removing or changing one is a major version.
 
+A role is the name of the app's variable. Many apps keep only the channels of a color in a variable
+and wrap them where they use it, as in `hsl(var(--background))`. Those apps say how, and every mood
+is written that way:
+
+```json
+"background": { "variable": "--background", "as": "hsl" }
+```
+
+| `as` | What the plugin writes for `#102126` | For an app that uses it as |
+|---|---|---|
+| `hex`, or nothing | `#102126` | `var(--background)` |
+| `hsl` | `193.6 40.7% 10.6%` | `hsl(var(--background))` |
+| `rgb` | `16 33 38` | `rgb(var(--background))` |
+| `rgb-commas` | `16, 33, 38` | `rgba(var(--background), 1)` |
+
 `root` is optional: the selector of the element that carries the app's variables, when it is not
 the root of the page (`"root": "body"`, for example). Moods are written there and styles are
 scoped from there.

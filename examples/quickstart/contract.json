@@ -1,0 +1,27 @@
+{
+  "contract": "1.0.0",
+  "app": "Tasks, the quickstart app",
+  "roles": {
+    "background": "--bg",
+    "surface": "--panel",
+    "text": "--fg",
+    "muted": "--fg-quiet",
+    "accent": "--accent",
+    "accentText": "--on-accent",
+    "border": "--line"
+  },
+  "variables": {
+    "--radius": { "since": "1.0.0", "about": "corner of the buttons and the field" },
+    "--font": { "since": "1.0.0", "about": "the letter of the whole app" }
+  },
+  "pieces": {
+    "task": { "since": "1.0.0", "about": "one task of the list" },
+    "tasks": { "since": "1.0.0", "about": "the half of the page with the list" },
+    "settings": { "since": "1.0.0", "about": "the half of the page with the settings" }
+  },
+  "zones": {
+    "page": { "since": "1.0.0", "pieces": ["tasks", "settings"] }
+  },
+  "deprecated": {},
+  "noMods": ["way-back"]
+}
