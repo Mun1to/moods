@@ -42,6 +42,7 @@ folder: an update replaces it.
 | `request` | yes | What the person asked for, in their words. An agent can redo the mod from it when the app changes. |
 | `contract` | yes | The range of the app contract the mod was made against, in semver (`^1.0`, `~1.2`, `1.2.0`, `>=1.1`). |
 | `name` | no | The name shown in the app. Defaults to the id. |
+| `family` | no | For a mood: the family it belongs to, as the app shows it (`"Catppuccin"`). The panel groups moods by it. |
 | `madeFor` | no | The app version it was made on. Information only. |
 | `touches` | no | The contract names the mod relies on: variables (`--name`), pieces (`piece:name`) and zones (`zone:name`). |
 
@@ -74,6 +75,12 @@ falls under 4.5:1, or `accent` on `background` under 3:1.
 `scheme` says if the mood is `dark` or `light`. The app can put its own dark or light look under
 the mood, so what the seven colors do not paint (shadows, pictures, the zones without mods) still
 matches.
+
+A mood can also say `"face"`: `bright`, `calm`, `focus` or `dream`, the face the panel draws on it.
+
+The plugin comes with a library of moods, grouped in families: the files in `library/`, one per
+family, each with its source and its license. `MOODS` is all of them and `moodsFrom("Moods",
+"Catppuccin")` the ones of some families, for `startMods({ contract, moods })`.
 
 ### `style`: CSS against names the app promises
 

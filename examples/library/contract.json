@@ -1,0 +1,18 @@
+{
+  "contract": "1.0.0",
+  "app": "The mood library",
+  "roles": {
+    "background": "--bg",
+    "surface": "--panel",
+    "text": "--fg",
+    "muted": "--fg-quiet",
+    "accent": "--accent",
+    "accentText": "--on-accent",
+    "border": "--line"
+  },
+  "variables": {},
+  "pieces": {},
+  "zones": {},
+  "deprecated": {},
+  "noMods": ["way-back"]
+}

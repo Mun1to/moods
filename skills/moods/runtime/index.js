@@ -8,7 +8,7 @@ export { review, compileMood, compileStyle, compileStructure, moodContrastNotes,
 export { createModHost } from "./apply.js";
 export { startMods, modsOf } from "./start.js";
 export { ModsPanel, WORDS } from "./panel.js";
-export { MOODS } from "./moods.js";
+export { MOODS, FAMILIES, moodsFrom } from "./moods.js";
 export { satisfies, parseVersion } from "./semver.js";
 export { contrast, luminance, colorAs, COLOR_FORMATS } from "./color.js";
 

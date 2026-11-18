@@ -164,9 +164,16 @@ test("two lines and a tag: the moods, the person's mods, what is remembered and 
     await page.waitFor("window.ready");
     const own = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     assert.equal(own, "rgb(251, 250, 247)");
-    // The panel offers the app's own look and the four moods, and a click on one changes the app.
-    assert.deepEqual(await page.evaluate(inPanel('return [...root.querySelectorAll(".mood")].map((b) => b.textContent)')),
-      ["Original", "Calm", "Focus", "Dream", "Bright"]);
+    // The panel offers the app's own look and one family of moods at a time, and a click on one changes the app.
+    const texts = (/** @type {string} */ selector) => page.evaluate(inPanel(`return [...root.querySelectorAll("${selector}")].map((b) => b.textContent)`));
+    assert.deepEqual((await texts(".family")).slice(0, 2), ["Moods", "Catppuccin"]);
+    assert.deepEqual(await texts(".mood"), ["Original", "Calm", "Focus", "Dream", "Bright"]);
+    await page.evaluate(inPanel('root.querySelectorAll(".family")[1].click()'));
+    assert.deepEqual(await texts(".mood"), ["Original", "Latte", "Frappé", "Macchiato", "Mocha"]);
+    await page.evaluate(inPanel('root.querySelectorAll(".mood")[4].click()'));
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(30, 30, 46)");
+    assert.equal(await page.evaluate(inPanel('return root.querySelector(\'.family[aria-pressed="true"]\').textContent')), "Catppuccin");
+    await page.evaluate(inPanel('root.querySelectorAll(".family")[0].click()'));
     await page.evaluate(inPanel('root.querySelectorAll(".mood")[1].click()'));
     assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(16, 33, 38)");
     assert.equal(await page.evaluate(inPanel('return root.querySelector(\'.mood[aria-pressed="true"]\').textContent')), "Calm");
@@ -223,7 +230,8 @@ test("a mood reaches an app that keeps only the channels of its colors, and look
   try {
     const result = await page.evaluate(async () => {
       window.mods.stop();
-      const { createModHost, MOODS } = await import("/skills/moods/runtime/index.js");
+      const { createModHost, moodsFrom } = await import("/skills/moods/runtime/index.js");
+      const MOODS = moodsFrom("Moods");
       const box = document.createElement("div");
       box.style.cssText = "background: hsl(var(--kit-bg)); color: rgb(var(--kit-fg)); border: 1px solid rgb(var(--kit-line))";
       document.body.append(box);
@@ -261,5 +269,38 @@ test("a mood reaches an app that keeps only the channels of its colors, and look
     assert.deepEqual(page.errors, []);
   } finally {
     await page.close();
+  }
+});
+
+// The page of the library is an app with the plugin too: every family is on it, and a click wears the mood.
+test("the library page shows every family and puts on the mood a person picks", { skip }, async () => {
+  const { FAMILIES } = await import("../skills/moods/runtime/index.js");
+  for (const width of [1440, 390]) {
+    const page = await browser.newPage({ width, height: 900, colorScheme: "light" });
+    try {
+      await page.goto(`${server.url}/examples/library/`);
+      await page.waitFor("window.ready");
+      await page.evaluate(() => { localStorage.clear(); window.mods.pickMood(null); });
+      const seen = await page.evaluate(() => ({
+        families: [...document.querySelectorAll(".family h2")].map((h) => h.textContent),
+        cards: document.querySelectorAll(".card").length,
+        // No row ends with a card alone, and nothing spills out of the window.
+        alone: [...document.querySelectorAll(".cards")].filter((row) => row.children.length > 1 && row.children.length % Number(row.style.getPropertyValue("--columns")) === 1).length,
+        spill: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        wayBack: document.getElementById("original").hidden,
+      }));
+      assert.deepEqual(seen.families, FAMILIES.map((f) => f.name));
+      assert.equal(seen.cards, MOODS.length);
+      assert.deepEqual([seen.alone, seen.spill, seen.wayBack], [0, 0, true]);
+      await page.evaluate(() => document.querySelector('[data-mood="catppuccin-mocha"]').click());
+      const worn = await page.evaluate(() => [getComputedStyle(document.body).backgroundColor, window.mods.mood,
+        document.querySelector('.card[aria-pressed="true"] .name').textContent, document.getElementById("original").hidden]);
+      assert.deepEqual(worn, ["rgb(30, 30, 46)", "catppuccin-mocha", "Mocha", false]);
+      await page.evaluate(() => document.getElementById("original").click());
+      assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(251, 250, 247)");
+      assert.deepEqual(page.errors, []);
+    } finally {
+      await page.close();
+    }
   }
 });

@@ -1,14 +1,14 @@
 // The rules of the mod format, one test each. Run with `pnpm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { mkdtemp, mkdir, writeFile, rm, readFile, symlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, MOODS } from "../skills/moods/runtime/index.js";
-import { moodsModule } from "../scripts/moods.mjs";
+import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, readManifest, MOODS, FAMILIES, moodsFrom } from "../skills/moods/runtime/index.js";
+import { moodsModule, creditsFile, readLibrary, checkLibrary } from "../scripts/moods.mjs";
 import { readModsFolder, watchModsFolder } from "../skills/moods/runtime/node.js";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -162,16 +162,53 @@ test("a mood wins over the app's own colors and says if it is dark or light", ()
   assert.match(low.notes[0], /text on background is .* under 4\.5:1/);
 });
 
-test("the four built-in moods pass every check, with no contrast warning", () => {
-  const dir = here("../skills/moods/moods/");
-  const ids = readdirSync(dir);
-  assert.deepEqual(ids.sort(), ["bright", "calm", "dream", "focus"]);
-  for (const id of ids) {
-    const read = (f) => readFileSync(path.join(dir, id, f), "utf8");
-    const v = review({ manifest: read("mod.json"), files: { "mood.json": read("mood.json") } }, contract);
-    assert.equal(v.state, "applied", `${id}: ${v.notes.join("; ")}`);
-    assert.deepEqual(v.notes, [], id);
+test("every mood of the library passes every check, with no contrast warning", async () => {
+  const families = await readLibrary();
+  assert.deepEqual(checkLibrary(families), []);
+  // The family that comes with the plugin goes first, and keeps the short names people already saved.
+  assert.equal(families[0].name, "Moods");
+  assert.deepEqual(moodsFrom("Moods").map((m) => m.id), ["calm", "focus", "dream", "bright"]);
+  for (const mood of MOODS) {
+    const v = review(mood, contract);
+    assert.equal(v.state, "applied", `${mood.id}: ${v.notes.join("; ")}`);
+    assert.deepEqual(v.notes, [], mood.id);
   }
+  // Every family says where its colors come from and under which license.
+  assert.equal(FAMILIES.reduce((n, f) => n + f.moods.length, 0), MOODS.length);
+  for (const f of FAMILIES) assert.match(`${f.source} ${f.license} ${f.copyright}`, /^https:\/\/\S+ \S+ \S/, f.name);
+  // A mod of a person can say its family too, and the name has a limit.
+  assert.equal(readManifest({ ...manifest(), type: "mood", family: " Mine " }).manifest.family, "Mine");
+  assert.deepEqual(readManifest({ ...manifest(), family: "x".repeat(41) }).errors, ["family must be a name of 40 characters at most"]);
+});
+
+test("the library says no to a mood that is hard to read, comes from nowhere or repeats another", () => {
+  const good = {
+    slug: "sample", name: "Sample", about: "A family for this test.", source: "https://example.org/sample", license: "MIT", copyright: "Copyright (c) 2026 Someone",
+    moods: [{ id: "sample-night", name: "Night", scheme: "dark", face: "calm",
+      colors: { background: "#102126", surface: "#17323B", text: "#DCEFEF", muted: "#8FB3B6", accent: "#6FD3C5", accentText: "#0B1F1D", border: "#28505A" } }],
+  };
+  assert.deepEqual(checkLibrary([good]), []);
+  const said = (change) => {
+    const family = structuredClone(good);
+    change(family);
+    return checkLibrary([family]).join("\n");
+  };
+  assert.match(said((f) => { f.moods[0].colors.text = "#17323B"; }), /^sample\.json: sample-night: text on background is 1\.\d\d:1, under 4\.5:1/);
+  assert.match(said((f) => { f.moods[0].colors.muted = "#4F7A80"; }), /muted on surface is \d\.\d\d:1, under 4\.5:1/);
+  assert.match(said((f) => { f.moods[0].colors.border = "#102126"; }), /border on background is 1\.00:1, under 1\.2:1/);
+  assert.match(said((f) => { delete f.source; }), /needs a source: the https address where the colors come from/);
+  assert.match(said((f) => { f.license = "GPL-3.0"; }), /needs a license of MIT, checked at its source/);
+  assert.match(said((f) => { f.moods[0].id = "night"; }), /the id must start with sample-/);
+  assert.match(said((f) => { f.moods[0].scheme = "light"; }), /says light, but its background is darker than its text/);
+  assert.match(said((f) => { f.moods[0].face = "angry"; }), /face must be one of bright, calm, focus, dream/);
+  assert.match(said((f) => { f.moods[0].colours = {}; }), /does not know "colours"/);
+  assert.match(said((f) => { f.moods.push({ ...f.moods[0], id: "sample-twin", name: "Twin" }); }), /sample-twin: has the same seven colors as sample-night/);
+  assert.deepEqual(checkLibrary([good, { ...good, slug: "other" }]), [
+    "other.json: another family is already called Sample",
+    "other.json: sample-night: the id must start with other-",
+    "other.json: sample-night: sample.json already has this id",
+    "other.json: sample-night: has the same seven colors as sample-night",
+  ]);
 });
 
 test("the folder reader brings every mod, and a broken folder comes back with its reason", async () => {
@@ -239,10 +276,13 @@ test("a mood is written the way the app keeps its colors: plain, or only the cha
   assert.deepEqual([odd.state, odd.notes[0]], ["broken", "the app keeps text as oklch, and this plugin writes hex, hsl, rgb, rgb-commas"]);
 });
 
-test("the moods a window ships are the mood folders, letter by letter", async () => {
+test("the moods a window ships are the library, letter by letter, and so are its credits", async () => {
   assert.equal(await readFile(here("../skills/moods/runtime/moods.js"), "utf8"), await moodsModule(), "run `pnpm moods`");
-  assert.deepEqual(MOODS.map((m) => m.id), ["calm", "focus", "dream", "bright"]);
-  for (const mood of MOODS) assert.equal(review(mood, contract).state, "applied", mood.id);
+  assert.equal(await readFile(here("../skills/moods/library/CREDITS.md"), "utf8"), await creditsFile(), "run `pnpm moods`");
+  // What comes from another project travels with its license, inside the file an app copies.
+  const text = await readFile(here("../skills/moods/runtime/moods.js"), "utf8");
+  for (const f of FAMILIES.slice(1)) assert.ok(text.includes(`//   ${f.name}: ${f.source} (${f.license}). ${f.copyright}`), f.name);
+  assert.match(text, /\/\/ MIT:\n\/\/ {3}Permission is hereby granted, free of charge/);
 });
 
 test("one command gets an app ready: the plugin, a drafted contract, the guide and the note for agents", async () => {

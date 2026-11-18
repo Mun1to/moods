@@ -1,0 +1,41 @@
+{
+  "name": "Moods",
+  "about": "The four that come with the plugin, one for each face.",
+  "source": "https://github.com/Mun1to/moods",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2026 Munir Torres Athayde",
+  "moods": [
+    {
+      "id": "calm",
+      "name": "Calm",
+      "scheme": "dark",
+      "face": "calm",
+      "request": "The Calm mood: eyes closed, soft smile.",
+      "colors": { "background": "#102126", "surface": "#17323B", "text": "#DCEFEF", "muted": "#8FB3B6", "accent": "#6FD3C5", "accentText": "#0B1F1D", "border": "#28505A" }
+    },
+    {
+      "id": "focus",
+      "name": "Focus",
+      "scheme": "dark",
+      "face": "focus",
+      "request": "The Focus mood: eyes wide open, straight mouth.",
+      "colors": { "background": "#1B1611", "surface": "#2B2219", "text": "#F5E8D5", "muted": "#B39C84", "accent": "#F2B544", "accentText": "#1B1611", "border": "#44372A" }
+    },
+    {
+      "id": "dream",
+      "name": "Dream",
+      "scheme": "dark",
+      "face": "dream",
+      "request": "The Dream mood: sleepy eyes, little round mouth.",
+      "colors": { "background": "#161329", "surface": "#231F40", "text": "#E8E4FB", "muted": "#A39CCC", "accent": "#A99BFF", "accentText": "#161329", "border": "#3A3363" }
+    },
+    {
+      "id": "bright",
+      "name": "Bright",
+      "scheme": "light",
+      "face": "bright",
+      "request": "The Bright mood: eyes open, big smile.",
+      "colors": { "background": "#FFF8EF", "surface": "#FFFFFF", "text": "#2A211E", "muted": "#6B5C54", "accent": "#F0603F", "accentText": "#1E1B24", "border": "#E6D8C8" }
+    }
+  ]
+}

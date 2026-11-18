@@ -8,9 +8,11 @@ import { MOODS } from "./moods.js";
  * @typedef {import("./compile.js").Contract} Contract
  * @typedef {import("./compile.js").ModInput} ModInput
  * @typedef {import("./compile.js").Verdict} Verdict
- * @typedef {Verdict & { on: boolean, from: "app" | "folder" | "browser", colors?: Record<string, string> }} ModRow
+ * @typedef {Verdict & { on: boolean, from: "app" | "folder" | "browser", colors?: Record<string, string>,
+ *   family?: string, face?: string }} ModRow
  *   one mod as the panel shows it: its verdict, if it is switched on, where it comes from (shipped
- *   with the app, the person's folder, or kept in this browser) and, for a mood, its colors
+ *   with the app, the person's folder, or kept in this browser) and, for a mood, its colors, the
+ *   family it belongs to and its face
  * @typedef {{ list: ModRow[], mood: string | null, allOff: boolean, safeStart: boolean, keeps: boolean,
  *   problem: string, folder: string, contract: Contract,
  *   pickMood: (id: string | null) => void, turn: (id: string, on: boolean) => void,
@@ -44,7 +46,8 @@ export function modsOf(doc = globalThis.document) {
  *   that reads them again (it runs at the start, on `reload()` and when the window gets the focus
  *   back). Leave it out in an app with no folder of its own: people then add mods in the panel and
  *   the browser keeps them.
- *   `moods`: the moods the app ships. The four built-in ones unless told otherwise.
+ *   `moods`: the moods the app ships. The whole library unless told otherwise; `moodsFrom("Moods",
+ *   "Catppuccin")` gives the ones of some families.
  *   `off`: start with every mod off, for the flag or the menu that is the way back. A web app gets
  *   the same from `?mods=off` in its address.
  *   `folder` and `openFolder`: where the person's mods live, for the panel to say and to open.
@@ -127,8 +130,8 @@ export async function startMods(options) {
     const verdicts = host.apply(entries.map(({ mod, on }) => ({ ...mod, enabled: on })), { off: safeStart || saved.allOff });
     rows = verdicts.map((verdict, i) => {
       const { mod, from, on } = entries[i];
-      const colors = verdict.type === "mood" ? moodColors(mod) : undefined;
-      return { ...verdict, on, from, ...(colors ? { colors } : {}) };
+      const look = verdict.type === "mood" ? moodLook(mod) : {};
+      return { ...verdict, on, from, ...look };
     });
     for (const listener of listeners) {
       try {
@@ -238,21 +241,28 @@ function typeOf(mod) {
 }
 
 /**
- * The seven colors of a mood, for the panel to draw it.
+ * What the panel needs to draw a mood: its seven colors, its family and its face.
  * @param {ModInput} mod
- * @returns {Record<string, string> | undefined}
+ * @returns {{ colors?: Record<string, string>, family?: string, face?: string }}
  */
-function moodColors(mod) {
+function moodLook(mod) {
+  /** @type {{ colors?: Record<string, string>, family?: string, face?: string }} */
+  const look = {};
+  const family = manifestOf(mod)?.family;
+  if (family) look.family = family;
   try {
-    const colors = JSON.parse(mod.files?.["mood.json"] ?? "").colors;
-    if (!colors || typeof colors !== "object") return undefined;
-    /** @type {Record<string, string>} */
-    const safe = {};
-    for (const [role, value] of Object.entries(colors)) if (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)) safe[role] = value;
-    return safe;
+    const mood = JSON.parse(mod.files?.["mood.json"] ?? "");
+    if (typeof mood?.face === "string") look.face = mood.face;
+    if (mood?.colors && typeof mood.colors === "object") {
+      /** @type {Record<string, string>} */
+      const safe = {};
+      for (const [role, value] of Object.entries(mood.colors)) if (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)) safe[role] = value;
+      look.colors = safe;
+    }
   } catch {
-    return undefined;
+    // A mood that cannot be read is drawn without its colors; its verdict already says why.
   }
+  return look;
 }
 
 /** @param {(Window & typeof globalThis) | null} view */

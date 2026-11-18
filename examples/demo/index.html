@@ -268,7 +268,7 @@ body.no-panel .panel { display: none; }
 </div>
 
 <script type="module">
-import { createModHost, ROLES } from "../../skills/moods/runtime/index.js";
+import { createModHost, ROLES, moodsFrom } from "../../skills/moods/runtime/index.js";
 import { FACES, FACE_BOX, faceShapes } from "../../scripts/lib/faces.mjs";
 
 const $ = (id) => document.getElementById(id);
@@ -286,7 +286,8 @@ async function load(dir) {
   if (res?.ok) files[FILES[manifest.type]] = await res.text();
   return { id: manifest.id, manifest, files };
 }
-const moods = await Promise.all(list.moods.map(load));
+// The four moods that come with the plugin. The whole library is in ../library/.
+const moods = moodsFrom("Moods");
 const shipped = await Promise.all(list.mods.map(load));
 const colorsOf = (id) => JSON.parse(moods.find((m) => m.id === id).files["mood.json"]);
 

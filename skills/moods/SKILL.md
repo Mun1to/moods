@@ -14,7 +14,8 @@ Three jobs, one format. Everything they need is in this folder:
   contract without opening the app. `scripts/forks.mjs`: what the forks of an app changed.
 - `templates/`: the folder readers for Tauri (`read_mods.rs`) and Python (`read_mods.py`), `MODS.md`
   (the guide an app gives its users), the note for coding agents and the text of a contract request.
-- `moods/`: the four built-in moods (Calm, Focus, Dream and Bright), as mod folders.
+- `library/`: the mood library, one file per family (the four of the plugin, Catppuccin and the
+  rest), each with its source and its license. `CREDITS.md` there lists them all.
 
 ## Job 1: a maintainer wants their app to accept mods
 
@@ -42,7 +43,8 @@ Three jobs, one format. Everything they need is in this folder:
 
    await startMods({ contract });
    ```
-   That already ships the four moods, remembers what the person picked and applies it. Add
+   That already ships the whole mood library, family by family, remembers what the person picked
+   and applies it. To ship only some families, pass `moods: moodsFrom("Moods", "Catppuccin")`. Add
    `onScheme: (scheme) => setAppTheme(scheme ?? systemTheme())` when the app has its own dark and
    light looks, so the right one sits under the mood that is on.
 4. **Give it the person's mods folder**, in their data folder, never in the install folder:
@@ -67,8 +69,8 @@ Three jobs, one format. Everything they need is in this folder:
    agent inside the app, ask for "rounder corners for me" and see that it writes a mod.
 8. **Close the network:** a Content Security Policy without remote images or fonts, as a second
    lock behind the plugin's gate.
-9. **Check it:** `node scripts/check.mjs <contract.json> <a folder of example mods>`, try the four
-   moods and one style mod in the running app, and update the app once with them on.
+9. **Check it:** `node scripts/check.mjs <contract.json> <a folder of example mods>`, try a light
+   mood, a dark one and one style mod in the running app, and update the app once with them on.
 
 To choose what the contract offers first, `node scripts/forks.mjs <owner/repo>` lists what the
 forks of the app changed most: the style files and the variables they kept editing.

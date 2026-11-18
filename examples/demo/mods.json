@@ -1,10 +1,4 @@
 {
-  "moods": [
-    "../../skills/moods/moods/calm",
-    "../../skills/moods/moods/focus",
-    "../../skills/moods/moods/dream",
-    "../../skills/moods/moods/bright"
-  ],
   "mods": [
     "user-mods/rounder-corners",
     "user-mods/sneaky-tracker",

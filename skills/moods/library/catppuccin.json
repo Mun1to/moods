@@ -1,0 +1,37 @@
+{
+  "name": "Catppuccin",
+  "about": "Soothing pastel colors: one light flavor and three dark ones.",
+  "source": "https://github.com/catppuccin/palette",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2021 Catppuccin",
+  "moods": [
+    {
+      "id": "catppuccin-latte",
+      "name": "Latte",
+      "scheme": "light",
+      "face": "bright",
+      "colors": { "background": "#eff1f5", "surface": "#e6e9ef", "text": "#4c4f69", "muted": "#5c5f77", "accent": "#8839ef", "accentText": "#eff1f5", "border": "#bcc0cc" }
+    },
+    {
+      "id": "catppuccin-frappe",
+      "name": "Frappé",
+      "scheme": "dark",
+      "face": "dream",
+      "colors": { "background": "#303446", "surface": "#292c3c", "text": "#c6d0f5", "muted": "#a5adce", "accent": "#ca9ee6", "accentText": "#232634", "border": "#51576d" }
+    },
+    {
+      "id": "catppuccin-macchiato",
+      "name": "Macchiato",
+      "scheme": "dark",
+      "face": "focus",
+      "colors": { "background": "#24273a", "surface": "#1e2030", "text": "#cad3f5", "muted": "#a5adcb", "accent": "#c6a0f6", "accentText": "#181926", "border": "#494d64" }
+    },
+    {
+      "id": "catppuccin-mocha",
+      "name": "Mocha",
+      "scheme": "dark",
+      "face": "calm",
+      "colors": { "background": "#1e1e2e", "surface": "#181825", "text": "#cdd6f4", "muted": "#a6adc8", "accent": "#cba6f7", "accentText": "#11111b", "border": "#45475a" }
+    }
+  ]
+}

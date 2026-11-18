@@ -1,8 +1,0 @@
-{
-  "format": 1,
-  "id": "focus",
-  "name": "Focus",
-  "type": "mood",
-  "request": "The Focus mood: eyes wide open, straight mouth.",
-  "contract": "^1.0"
-}

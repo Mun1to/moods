@@ -1,7 +1,8 @@
 // Everything the README shows, made again from the real thing: `pnpm readme`.
 //  - the "how it works" drawing, wide and narrow, light and dark;
 //  - the screenshots of the demo app, taken in a browser without a window.
-// The pictures land in .github/readme/. Pass --drawing to skip the screenshots.
+// The pictures land in .github/readme/. Pass --drawing to skip the screenshots, or
+// --only=quickstart,library to take just those again.
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -120,14 +121,16 @@ console.log("Drawing: how-it-works-{light,dark}{,-narrow}.svg");
 // ---------- the screenshots ----------
 
 if (!process.argv.includes("--drawing")) {
+  const only = process.argv.find((arg) => arg.startsWith("--only="))?.slice("--only=".length).split(",") ?? null;
   const server = await startServer({ port: 0 });
   const browser = await launch();
   try {
     /**
      * @param {string} name @param {string} query
-     * @param {{ width?: number, height?: number, scheme?: "light" | "dark", before?: string, app?: string, ready?: string }} [options]
+     * @param {{ width?: number, height?: number, scheme?: "light" | "dark", before?: string, app?: string, ready?: string, whole?: boolean }} [options]
      */
-    const shot = async (name, query, { width = 1280, height = 860, scheme = "light", before, app = "demo", ready = "document.body.dataset.ready === '1'" } = {}) => {
+    const shot = async (name, query, { width = 1280, height = 860, scheme = "light", before, app = "demo", ready = "document.body.dataset.ready === '1'", whole = false } = {}) => {
+      if (only && !only.includes(name)) return;
       const page = await browser.newPage({ width, height, deviceScaleFactor: 2, colorScheme: scheme });
       await page.goto(`${server.url}/examples/${app}/${query}`);
       await page.waitFor(ready);
@@ -135,7 +138,7 @@ if (!process.argv.includes("--drawing")) {
       await page.evaluate("document.fonts.ready.then(() => true)");
       await new Promise((r) => setTimeout(r, 400));
       if (page.errors.length) throw new Error(`${name}: ${page.errors.join("; ")}`);
-      await page.screenshot({ path: path.join(out, `${name}.png`) });
+      await page.screenshot({ path: path.join(out, `${name}.png`), fullPage: whole });
       await page.close();
       console.log(`Screenshot: ${name}.png`);
     };
@@ -162,6 +165,11 @@ if (!process.argv.includes("--drawing")) {
         window.mods.pickMood("dream");
         return true;
       })()`,
+    });
+    // The mood library: every family on one page, each mood drawn as a small app in its own colors.
+    await shot("library", "", {
+      app: "library", ready: "window.ready === true", width: 1440, height: 900, whole: true,
+      before: "(() => { localStorage.clear(); window.mods.pickMood(null); return true; })()",
     });
   } finally {
     await browser.close();

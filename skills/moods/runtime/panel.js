@@ -8,7 +8,10 @@ import { readManifest, FILE_FOR_TYPE } from "./manifest.js";
 /** The words of the panel. An app in another language sets its own on `panel.words`. */
 export const WORDS = {
   moods: "Mood",
+  families: "Families of moods",
   original: "Original",
+  yours: "Yours",
+  app: "This app",
   mods: "Mods",
   none: "No mods yet.",
   add: "Add a mod",
@@ -31,8 +34,8 @@ export const WORDS = {
 const SWITCH_SIZE = "2.7em";
 const SVG = "http://www.w3.org/2000/svg";
 
-// The face of each built-in mood, in a 100 x 78 box: its eyes (a ring with a pupil, or a line) and
-// its mouth. Any other mood gets the open eyes and the smile.
+// The four faces, in a 100 x 78 box: the eyes (a ring with a pupil, or a line) and the mouth. A
+// mood says which one is its own; one that says nothing gets the open eyes and the smile.
 const FACES = /** @type {Record<string, { eyes: (string | [number, number])[], mouth: string | [number, number, number] }>} */ ({
   bright: { eyes: [[31.5, 30.5], [75.5, 30.5]], mouth: "M26 56 Q50 76 74 56" },
   calm: { eyes: ["M13 28 Q28 42 43 28", "M57 28 Q72 42 87 28"], mouth: "M36 58 Q50 67 64 58" },
@@ -41,7 +44,7 @@ const FACES = /** @type {Record<string, { eyes: (string | [number, number])[], m
 });
 
 /**
- * @param {string} id the mood
+ * @param {string} id the face
  * @param {string} ink the color of the eyes
  * @param {string} smile the color of the mouth
  */
@@ -109,6 +112,10 @@ h3 { margin: 0 0 .55em; font-size: 1.06em; font-weight: 700; }
 p { margin: 0; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible { outline: 3px solid var(--_mp-accent); outline-offset: 2px; }
+.families { display: flex; flex-wrap: wrap; gap: .15em 1.4em; margin: 0 0 .8em; }
+.family { display: grid; padding: .2em 0 .25em; border: 0; border-bottom: 3px solid transparent; background: none; font-weight: 600; text-align: start; }
+.family::after { content: attr(data-name); height: 0; overflow: hidden; visibility: hidden; font-weight: 800; }
+.family[aria-pressed="true"] { border-bottom-color: var(--_mp-accent); font-weight: 800; }
 .moods { display: flex; flex-wrap: wrap; gap: .6em; margin: 0 0 1.5em; }
 .mood { flex: 1 1 calc((100% - (var(--columns, 5) - 1) * .6em) / var(--columns, 5)); min-width: 0; display: grid; gap: .45em; padding: .45em .45em .5em; text-align: start; font-weight: 600;
   background: none; border: 2px solid var(--_mp-line); border-radius: 6px; }
@@ -160,6 +167,8 @@ export class ModsPanel extends Base {
     this.ready = () => this.bind();
     /** @type {ResizeObserver | null} */
     this.sizes = null;
+    /** The family of moods the person asked to see. Until they pick one, the panel shows the one of the mood that is on. */
+    this.family = /** @type {string | null} */ (null);
   }
 
   connectedCallback() {
@@ -189,7 +198,7 @@ export class ModsPanel extends Base {
     if (!row || !view) return;
     const count = row.children.length;
     const em = parseFloat(view.getComputedStyle(row).fontSize) || 16;
-    const fits = Math.max(1, Math.min(count, Math.floor((row.clientWidth + 0.6 * em) / (5.4 * em + 0.6 * em))));
+    const fits = Math.max(1, Math.min(count, Math.floor((row.clientWidth + 0.6 * em) / (6.2 * em + 0.6 * em))));
     let columns = fits;
     while (columns > 2 && count % columns === 1) columns--;
     row.style.setProperty("--columns", String(columns));
@@ -228,12 +237,29 @@ export class ModsPanel extends Base {
     const moods = mods.list.filter((m) => m.type === "mood");
     const others = mods.list.filter((m) => m.type !== "mood");
 
+    // With more than one family, the panel shows one at a time: the names in a row, its moods below.
+    /** @type {Map<string, typeof moods>} */
+    const families = new Map();
+    for (const mood of moods) {
+      const name = mood.family ?? (mood.from === "app" ? w.app : w.yours);
+      families.set(name, [...(families.get(name) ?? []), mood]);
+    }
+    const open = this.family && families.has(this.family)
+      ? this.family
+      : [...families].find(([, list]) => list.some((m) => m.id === mods.mood))?.[0] ?? [...families.keys()][0] ?? "";
+    const shown = families.size > 1 ? families.get(open) ?? [] : moods;
+    const names = families.size > 1
+      ? h("div", { class: "families", role: "group", "aria-label": w.families }, ...[...families.keys()].map((name) =>
+        h("button", { class: "family", type: "button", "data-key": `family:${name}`, "data-name": name, "aria-pressed": String(name === open),
+          click: () => { this.family = name; this.render(); } }, name)))
+      : null;
+
     const picker = h("div", { class: "moods", role: "group", "aria-label": w.moods },
       h("button", { class: "mood", type: "button", "data-key": "mood:", "aria-pressed": String(!mods.mood), click: () => mods.pickMood(null) },
         h("span", { class: "swatch own" }, face("", "#1c1b20", "#d9482b")), w.original),
-      ...moods.map((mood) => {
+      ...shown.map((mood) => {
         const c = mood.colors ?? {};
-        const swatch = h("span", { class: "swatch" }, face(mood.id, c.text ?? "currentColor", c.accent ?? "currentColor"));
+        const swatch = h("span", { class: "swatch" }, face(mood.face ?? mood.id, c.text ?? "currentColor", c.accent ?? "currentColor"));
         swatch.style.background = c.background ?? "";
         return h("button", { class: "mood", type: "button", "data-key": `mood:${mood.id}`, "aria-pressed": String(mods.mood === mood.id),
           title: mood.notes.join(" "), click: () => mods.pickMood(mood.id) }, swatch, mood.name);
@@ -275,7 +301,7 @@ export class ModsPanel extends Base {
     root.replaceChildren(...[
       h("style", {}, sheet(mods.contract)),
       status ? h("p", { class: "note", role: "status" }, status) : null,
-      h("h3", {}, w.moods), picker,
+      h("h3", {}, w.moods), names, picker,
       h("h3", {}, w.mods),
       others.length ? list : h("p", { class: "list" }, w.none),
       h("div", { class: "foot" }, left, h("slot", { name: "way-back" })),

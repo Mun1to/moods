@@ -8,7 +8,7 @@ const RANGE = /^(\^|~|>=)?\s*\d+(\.\d+){0,2}$/;
 
 /**
  * @typedef {{ format: 1, id: string, name: string, type: "mood" | "style" | "structure",
- *   request: string, contract: string, madeFor?: string, touches: string[] }} Manifest
+ *   request: string, contract: string, madeFor?: string, family?: string, touches: string[] }} Manifest
  */
 
 /**
@@ -38,6 +38,7 @@ export function readManifest(input) {
   if (typeof m.contract !== "string" || !RANGE.test(m.contract.trim())) errors.push("contract must be a semver range like ^1.0");
   if (m.madeFor !== undefined && (typeof m.madeFor !== "string" || !parseVersion(m.madeFor))) errors.push("madeFor must be a version like 3.9.0");
   if (m.name !== undefined && typeof m.name !== "string") errors.push("name must be text");
+  if (m.family !== undefined && (typeof m.family !== "string" || !m.family.trim() || m.family.length > 40)) errors.push("family must be a name of 40 characters at most");
   if (m.touches !== undefined && (!Array.isArray(m.touches) || m.touches.some((t) => typeof t !== "string"))) {
     errors.push("touches must be a list of names");
   }
@@ -52,6 +53,7 @@ export function readManifest(input) {
       request: /** @type {string} */ (m.request).trim(),
       contract: /** @type {string} */ (m.contract).trim(),
       ...(m.madeFor ? { madeFor: /** @type {string} */ (m.madeFor) } : {}),
+      ...(typeof m.family === "string" ? { family: m.family.trim() } : {}),
       touches: /** @type {string[] | undefined} */ (m.touches) ?? [],
     },
   };
