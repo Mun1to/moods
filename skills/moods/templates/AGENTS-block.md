@@ -7,8 +7,8 @@ source and do not fork the repository. Write a mod in their mods folder. A mod s
 update of the app; an edited copy stops getting updates.
 
 - The names a mod may use are in `<contract.json>`. Nothing else is safe to rely on.
-- Check the mod before saying it is done: `node check.mjs <contract.json> <the mod folder>`
-  ([check.mjs](<check.mjs>) comes with the mods plugin).
+- Check the mod before saying it is done:
+  `npx github:Mun1to/moods check <contract.json> <the mod folder>`
 - If the change needs a name the contract does not have, say so and offer to open an issue asking
   for that name. Do not work around it by editing the app.
 - Edit the source only when the change is meant for everyone (a contribution) or it is behavior

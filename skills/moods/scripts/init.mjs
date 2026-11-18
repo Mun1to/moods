@@ -210,8 +210,7 @@ try {
     .replaceAll("<link to contract.json>", toPosix(contractFile))
     .replaceAll("<link to the plugin>", PLUGIN)
     .replaceAll("<link to the format>", `${PLUGIN}/blob/main/skills/moods/reference/format.md`)
-    .replaceAll("<contract.json>", toPosix(contractFile))
-    .replaceAll("<check.mjs>", `${PLUGIN}/blob/main/skills/moods/scripts/check.mjs`);
+    .replaceAll("<contract.json>", toPosix(contractFile));
 
   const block = fill(await readFile(path.join(skill, "templates", "AGENTS-block.md"), "utf8")).trim();
   const agentsBefore = (await exists(agentsFile)) ? await readFile(agentsFile, "utf8") : "";
@@ -220,12 +219,24 @@ try {
     ? agentsBefore.replace(marker, block)
     : `${agentsBefore.trimEnd()}${agentsBefore.trim() ? "\n\n" : ""}${block}\n`;
 
+  // Claude Code reads CLAUDE.md, not AGENTS.md: a CLAUDE.md that brings AGENTS.md in gives it the note
+  // too. One that is already there and does not bring it in gets the note itself.
+  const claudeFile = path.join(app, "CLAUDE.md");
+  const claudeBefore = (await exists(claudeFile)) ? await readFile(claudeFile, "utf8") : null;
+  let claudeAfter = claudeBefore;
+  if (claudeBefore === null) {
+    claudeAfter = `# ${name}\n\nWhat coding agents need to know about this project is in \`AGENTS.md\`. This file only brings it\ninto Claude Code, so there is one copy to keep.\n\n@AGENTS.md\n`;
+  } else if (!/^@(\.\/)?AGENTS\.md\s*$/m.test(claudeBefore)) {
+    claudeAfter = marker.test(claudeBefore) ? claudeBefore.replace(marker, block) : `${claudeBefore.trimEnd()}\n\n${block}\n`;
+  }
+
   if (!dry) {
     await mkdir(into, { recursive: true });
     await cp(path.join(skill, "runtime"), into, { recursive: true });
     if (!hadContract) await writeFile(contractFile, `${JSON.stringify(contract, null, 2)}\n`);
     if (!hadGuide) await writeFile(modsFile, fill(await readFile(path.join(skill, "templates", "MODS.md"), "utf8")));
     if (agentsAfter !== agentsBefore) await writeFile(agentsFile, agentsAfter);
+    if (claudeAfter !== null && claudeAfter !== claudeBefore) await writeFile(claudeFile, claudeAfter);
   }
 
   const say = console.log;
@@ -236,6 +247,7 @@ try {
   say(hadContract ? `Kept ${rel(contractFile)} as it was.` : `${did} ${rel(contractFile)} (a draft: every name in it is a promise, so take out what you would not keep).`);
   say(hadGuide ? `Kept MODS.md as it was.` : `${did} MODS.md (for the people who use the app; fill what is between < and >).`);
   say(agentsAfter === agentsBefore ? "AGENTS.md already tells agents to make a mod." : `${did} AGENTS.md (agents asked to change the app for one person make a mod instead of editing it).`);
+  if (claudeAfter !== claudeBefore) say(`${did} CLAUDE.md (${claudeBefore === null ? "it brings AGENTS.md into Claude Code, which does not read it by itself" : "the same note, because it does not bring AGENTS.md in"}).`);
   if (!hadContract) {
     say("");
     const mapped = Object.entries(roles).map(([role, r]) => `${role}: ${typeof r === "string" ? r : `${r.variable} (kept as ${r.as})`}`);

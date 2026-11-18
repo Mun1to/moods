@@ -283,6 +283,9 @@ body { background: hsl(var(--background)); color: hsl(var(--foreground)); border
     const note = await readFile(forAgents, "utf8");
     assert.match(note, /^# Tiny app\n\nUse pnpm\.\n\n<!-- mods:start -->\n## Changing how tiny-app looks: make a mod, do not edit the app/);
     assert.match(note, /The names a mod may use are in `src\/mods\/contract\.json`/);
+    // Claude Code does not read that file by itself: a CLAUDE.md brings it in. Measured with a fresh
+    // agent: without it, asked for rounder corners, it edited the app; with it, it wrote a mod.
+    assert.match(await readFile(path.join(app, "CLAUDE.md"), "utf8"), /^@AGENTS\.md$/m);
 
     // Again: the plugin is copied again, and what the maintainer wrote is left alone.
     await writeFile(path.join(app, "src", "mods", "contract.json"), JSON.stringify({ ...drafted, app: "Edited by hand" }));
@@ -291,6 +294,14 @@ body { background: hsl(var(--background)); color: hsl(var(--foreground)); border
     assert.match(second.stdout, /Kept src\/mods\/contract\.json as it was/);
     assert.equal(JSON.parse(await readFile(path.join(app, "src", "mods", "contract.json"), "utf8")).app, "Edited by hand");
     assert.equal((await readFile(forAgents, "utf8")).match(/mods:start/g).length, 1);
+
+    // An app that already has its own CLAUDE.md, without that line, gets the note in it, once.
+    await writeFile(path.join(app, "CLAUDE.md"), "# Tiny app for Claude\n");
+    assert.equal(init().status, 0);
+    assert.equal(init().status, 0);
+    const own = await readFile(path.join(app, "CLAUDE.md"), "utf8");
+    assert.match(own, /^# Tiny app for Claude\n\n<!-- mods:start -->/);
+    assert.equal(own.match(/mods:start/g).length, 1);
   } finally {
     await rm(app, { recursive: true, force: true });
   }

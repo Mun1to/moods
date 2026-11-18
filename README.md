@@ -42,9 +42,10 @@ their own on their main branch, measured in November 2026 with the tool below):
 - **Half were 126 commits or more behind** the app, counting the nine apps still in development.
 - 4% changed only the interface. The rest changed logic too, and mods do not cover logic yet.
 
-Coding agents make that first step easier than ever: ask one for "a darker theme" inside a
+Coding agents make that first step easier than ever: ask one for "rounder corners" inside a
 repository and it edits the source. An app with this plugin tells the agent, in its `AGENTS.md`,
-to write a mod instead.
+to write a mod instead. Tried with a fresh agent on the same small app: without the note it
+changed the app's stylesheet; with it, it wrote a mod and left the app untouched.
 
 Measure your own app. It also lists the style files and the variables your forks changed most,
 which is what your contract should offer first:
@@ -147,8 +148,9 @@ npx github:Mun1to/moods init
 
 It copies the plugin (plain JavaScript modules, no dependencies and no build step), reads your
 styles to draft a `contract.json` with the names you promise to keep, writes `MODS.md` for the
-people who use the app and adds the note for coding agents to `AGENTS.md`. Then two lines where
-your window starts, and one tag in your settings:
+people who use the app and adds the note for coding agents to `AGENTS.md` (with a `CLAUDE.md` that
+brings it into Claude Code, which does not read it by itself). Then two lines where your window
+starts, and one tag in your settings:
 
 ```js
 import { startMods } from "./mods/index.js";

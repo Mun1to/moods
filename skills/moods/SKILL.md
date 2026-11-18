@@ -20,8 +20,9 @@ Three jobs, one format. Everything they need is in this folder:
 
 1. **Run `node scripts/init.mjs <the app's folder>`** and read what it prints. It copies `runtime/`
    into the app (`src/mods/`), reads the app's styles to draft `contract.json`, writes `MODS.md`
-   and adds a note to the app's `AGENTS.md`. Running it again updates the plugin and keeps what the
-   maintainer edited. `--dry-run` only says what it would do.
+   and adds a note to the app's `AGENTS.md` (and a `CLAUDE.md` that brings it in, because Claude
+   Code does not read `AGENTS.md` by itself). Running it again updates the plugin and keeps what
+   the maintainer edited. `--dry-run` only says what it would do.
 2. **Go through the drafted `contract.json` with the maintainer.** Every name in it is a promise:
    take out what they would not keep.
    - The seven mood roles (`background`, `surface`, `text`, `muted`, `accent`, `accentText`,
@@ -60,9 +61,10 @@ Three jobs, one format. Everything they need is in this folder:
 6. **Give people a way back that no mod can break:** a start without mods from outside the window
    (a command-line flag, a menu or a tray item) that passes `off: true` to `startMods`. A web app
    already has one: `?mods=off` in its address.
-7. **Fill the blanks of `MODS.md`** (they are between `<` and `>`) and leave the note in
-   `AGENTS.md`: it is what makes the agent of someone who wants the app their way write a mod
-   instead of editing the app.
+7. **Fill the blanks of `MODS.md`** (they are between `<` and `>`), above all where the mods
+   folder is, and leave the note in `AGENTS.md`: it is what makes the agent of someone who wants
+   the app their way write a mod instead of editing the app. Try it: in a fresh session of an
+   agent inside the app, ask for "rounder corners for me" and see that it writes a mod.
 8. **Close the network:** a Content Security Policy without remote images or fonts, as a second
    lock behind the plugin's gate.
 9. **Check it:** `node scripts/check.mjs <contract.json> <a folder of example mods>`, try the four
