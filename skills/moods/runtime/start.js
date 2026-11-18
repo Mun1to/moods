@@ -46,8 +46,8 @@ export function modsOf(doc = globalThis.document) {
  *   that reads them again (it runs at the start, on `reload()` and when the window gets the focus
  *   back). Leave it out in an app with no folder of its own: people then add mods in the panel and
  *   the browser keeps them.
- *   `moods`: the moods the app ships. The whole library unless told otherwise; `moodsFrom("Moods",
- *   "Catppuccin")` gives the ones of some families.
+ *   `moods`: the moods the app ships. The four of the plugin unless told otherwise. `EXAMPLES` is
+ *   every example mood, and `moodsFrom("Moods", "Catppuccin")` the ones of some families.
  *   `off`: start with every mod off, for the flag or the menu that is the way back. A web app gets
  *   the same from `?mods=off` in its address.
  *   `folder` and `openFolder`: where the person's mods live, for the panel to say and to open.

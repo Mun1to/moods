@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, readManifest, MOODS, FAMILIES, moodsFrom } from "../skills/moods/runtime/index.js";
+import { checkStyle, review, satisfies, compileStyle, compileStructure, compileMood, walkStyle, colorAs, readManifest, MOODS, EXAMPLES, FAMILIES, moodsFrom } from "../skills/moods/runtime/index.js";
 import { moodsModule, creditsFile, readLibrary, checkLibrary } from "../scripts/moods.mjs";
 import { readModsFolder, watchModsFolder } from "../skills/moods/runtime/node.js";
 
@@ -168,13 +168,15 @@ test("every mood of the library passes every check, with no contrast warning", a
   // The family that comes with the plugin goes first, and keeps the short names people already saved.
   assert.equal(families[0].name, "Moods");
   assert.deepEqual(moodsFrom("Moods").map((m) => m.id), ["calm", "focus", "dream", "bright"]);
-  for (const mood of MOODS) {
+  // An app that says nothing ships those four. The rest are examples it can ask for.
+  assert.deepEqual(MOODS, moodsFrom("Moods"));
+  for (const mood of EXAMPLES) {
     const v = review(mood, contract);
     assert.equal(v.state, "applied", `${mood.id}: ${v.notes.join("; ")}`);
     assert.deepEqual(v.notes, [], mood.id);
   }
   // Every family says where its colors come from and under which license.
-  assert.equal(FAMILIES.reduce((n, f) => n + f.moods.length, 0), MOODS.length);
+  assert.equal(FAMILIES.reduce((n, f) => n + f.moods.length, 0), EXAMPLES.length);
   for (const f of FAMILIES) assert.match(`${f.source} ${f.license} ${f.copyright}`, /^https:\/\/\S+ \S+ \S/, f.name);
   // A mod of a person can say its family too, and the name has a limit.
   assert.equal(readManifest({ ...manifest(), type: "mood", family: " Mine " }).manifest.family, "Mine");

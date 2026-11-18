@@ -177,8 +177,10 @@ export async function moodsModule(families) {
   })));
   const about = list.map((f) => ({ name: f.name, about: f.about, source: f.source, license: f.license, copyright: f.copyright, moods: f.moods.map((m) => m.id) }));
   const count = `${moods.length} moods in ${list.length} families`;
+  const own = list.find((f) => f.slug === HOUSE)?.moods.length ?? 0;
   const lines = [
-    `// The moods every app with the plugin can ship: ${count}.`,
+    `// Example moods for any app with the plugin: ${count}. They are examples, not a fixed set:`,
+    "// an app ships the ones it likes, changes them or brings its own.",
     "// Written by `pnpm moods` from the files in ../library/. Change those, not this file.",
   ];
   if (others.length) {
@@ -193,16 +195,22 @@ export async function moodsModule(families) {
     "/** The families: who made each one, under which license, and which moods are in it. */",
     `export const FAMILIES = [\n${about.map((f) => `  ${JSON.stringify(f)},`).join("\n")}\n];`,
     "",
-    '/** @type {import("./compile.js").ModInput[]} */',
-    `export const MOODS = [\n${moods.map((m) => `  ${JSON.stringify(m)},`).join("\n")}\n];`,
+    "/**",
+    " * Every example mood, family by family.",
+    ' * @type {import("./compile.js").ModInput[]}',
+    " */",
+    `export const EXAMPLES = [\n${moods.map((m) => `  ${JSON.stringify(m)},`).join("\n")}\n];`,
+    "",
+    "/** The ones that come with the plugin: what an app ships when it does not say which. */",
+    `export const MOODS = EXAMPLES.slice(0, ${own});`,
     "",
     "/**",
-    ' * The moods of some families, by name: `moodsFrom("Moods", "Catppuccin")`.',
+    ' * The example moods of some families, by name: `moodsFrom("Moods", "Catppuccin")`.',
     " * @param {...string} families",
     " */",
     "export function moodsFrom(...families) {",
     "  const ids = new Set(FAMILIES.filter((f) => families.includes(f.name)).flatMap((f) => f.moods));",
-    '  return MOODS.filter((m) => ids.has(m.id ?? ""));',
+    '  return EXAMPLES.filter((m) => ids.has(m.id ?? ""));',
     "}",
     "",
   );

@@ -1,6 +1,6 @@
 {
   "contract": "1.0.0",
-  "app": "The mood library",
+  "app": "Example moods",
   "roles": {
     "background": "--bg",
     "surface": "--panel",

@@ -14,8 +14,9 @@ Three jobs, one format. Everything they need is in this folder:
   contract without opening the app. `scripts/forks.mjs`: what the forks of an app changed.
 - `templates/`: the folder readers for Tauri (`read_mods.rs`) and Python (`read_mods.py`), `MODS.md`
   (the guide an app gives its users), the note for coding agents and the text of a contract request.
-- `library/`: the mood library, one file per family (the four of the plugin, Catppuccin and the
-  rest), each with its source and its license. `CREDITS.md` there lists them all.
+- `library/`: example moods, one file per family (the four of the plugin, Catppuccin, Kanagawa and
+  more), each with its source and its license. They are examples, not a fixed set: an app ships
+  the ones it likes, changes them or brings its own. `CREDITS.md` there lists them all.
 
 ## Job 1: a maintainer wants their app to accept mods
 
@@ -43,8 +44,9 @@ Three jobs, one format. Everything they need is in this folder:
 
    await startMods({ contract });
    ```
-   That already ships the whole mood library, family by family, remembers what the person picked
-   and applies it. To ship only some families, pass `moods: moodsFrom("Moods", "Catppuccin")`. Add
+   That already ships the four moods of the plugin, remembers what the person picked and applies
+   it. To offer the example moods too, pass `moods: EXAMPLES`, or `moods: moodsFrom("Moods",
+   "Catppuccin")` for some families: the panel then shows one family at a time. Add
    `onScheme: (scheme) => setAppTheme(scheme ?? systemTheme())` when the app has its own dark and
    light looks, so the right one sits under the mood that is on.
 4. **Give it the person's mods folder**, in their data folder, never in the install folder:

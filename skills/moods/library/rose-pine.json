@@ -1,0 +1,24 @@
+{
+  "name": "Rosé Pine",
+  "about": "All natural pine, faux fur and a bit of soho vibes.",
+  "source": "https://github.com/rose-pine/palette",
+  "license": "MIT",
+  "copyright": "Copyright (c) mvllow",
+  "moods": [
+    {
+      "id": "rose-pine-main",
+      "name": "Main",
+      "scheme": "dark",
+      "face": "dream",
+      "colors": {
+        "background": "#191724",
+        "surface": "#1f1d2e",
+        "text": "#e0def4",
+        "muted": "#908caa",
+        "accent": "#ebbcba",
+        "accentText": "#191724",
+        "border": "#6e6a86"
+      }
+    }
+  ]
+}

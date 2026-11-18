@@ -1,0 +1,30 @@
+{
+  "name": "Kanagawa",
+  "about": "The colors of the famous wave: two dark moods and a light one on paper.",
+  "source": "https://github.com/rebelot/kanagawa.nvim",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2021 Tommaso Laurenzi",
+  "moods": [
+    {
+      "id": "kanagawa-wave",
+      "name": "Wave",
+      "scheme": "dark",
+      "face": "calm",
+      "colors": { "background": "#1F1F28", "surface": "#2A2A37", "text": "#DCD7BA", "muted": "#C8C093", "accent": "#7E9CD8", "accentText": "#16161D", "border": "#54546D" }
+    },
+    {
+      "id": "kanagawa-dragon",
+      "name": "Dragon",
+      "scheme": "dark",
+      "face": "focus",
+      "colors": { "background": "#181616", "surface": "#282727", "text": "#c5c9c5", "muted": "#a6a69c", "accent": "#c4b28a", "accentText": "#0d0c0c", "border": "#625e5a" }
+    },
+    {
+      "id": "kanagawa-lotus",
+      "name": "Lotus",
+      "scheme": "light",
+      "face": "bright",
+      "colors": { "background": "#f2ecbc", "surface": "#e5ddb0", "text": "#43436c", "muted": "#545464", "accent": "#624c83", "accentText": "#f2ecbc", "border": "#8a8980" }
+    }
+  ]
+}

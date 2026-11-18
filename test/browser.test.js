@@ -4,7 +4,7 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { findBrowser, launch } from "../scripts/lib/browser.mjs";
 import { startServer } from "../scripts/serve.mjs";
-import { MOODS } from "../skills/moods/runtime/index.js";
+import { MOODS, EXAMPLES } from "../skills/moods/runtime/index.js";
 
 const MOODS_BRIGHT = /** @type {string} */ (MOODS.find((m) => m.id === "bright")?.files?.["mood.json"]);
 
@@ -282,7 +282,8 @@ test("the library page shows every family and puts on the mood a person picks", 
       await page.waitFor("window.ready");
       await page.evaluate(() => { localStorage.clear(); window.mods.pickMood(null); });
       const seen = await page.evaluate(() => ({
-        families: [...document.querySelectorAll(".family h2")].map((h) => h.textContent),
+        families: [...new Set([...document.querySelectorAll(".card .family")].map((h) => h.textContent))],
+        credits: document.querySelectorAll("#from li").length,
         cards: document.querySelectorAll(".card").length,
         // No row ends with a card alone, and nothing spills out of the window.
         alone: [...document.querySelectorAll(".cards")].filter((row) => row.children.length > 1 && row.children.length % Number(row.style.getPropertyValue("--columns")) === 1).length,
@@ -290,7 +291,8 @@ test("the library page shows every family and puts on the mood a person picks", 
         wayBack: document.getElementById("original").hidden,
       }));
       assert.deepEqual(seen.families, FAMILIES.map((f) => f.name));
-      assert.equal(seen.cards, MOODS.length);
+      assert.equal(seen.credits, FAMILIES.length);
+      assert.equal(seen.cards, EXAMPLES.length);
       assert.deepEqual([seen.alone, seen.spill, seen.wayBack], [0, 0, true]);
       await page.evaluate(() => document.querySelector('[data-mood="catppuccin-mocha"]').click());
       const worn = await page.evaluate(() => [getComputedStyle(document.body).backgroundColor, window.mods.mood,

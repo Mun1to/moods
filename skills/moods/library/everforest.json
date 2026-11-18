@@ -1,0 +1,16 @@
+{
+  "name": "Everforest",
+  "about": "A green forest that is warm and soft on the eyes.",
+  "source": "https://github.com/sainnhe/everforest",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2019 sainnhe",
+  "moods": [
+    {
+      "id": "everforest-dark",
+      "name": "Dark",
+      "scheme": "dark",
+      "face": "calm",
+      "colors": { "background": "#2D353B", "surface": "#232A2E", "text": "#D3C6AA", "muted": "#9DA9A0", "accent": "#A7C080", "accentText": "#2D353B", "border": "#475258" }
+    }
+  ]
+}

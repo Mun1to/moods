@@ -1,7 +1,7 @@
 # Contributing
 
-The easiest way in is a mood: seven colors in a file. Nobody has to approve your taste. A check
-reads the colors, and what passes can ship.
+The easiest way in is a mood: seven colors in a file. The moods here are examples, not a fixed
+set, so nobody has to approve your taste. A check reads the colors, and what passes can ship.
 
 ## Add a mood
 

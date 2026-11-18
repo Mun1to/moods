@@ -1,0 +1,23 @@
+{
+  "name": "Flexoki",
+  "about": "An inky palette for reading and writing, on paper or at night.",
+  "source": "https://github.com/kepano/flexoki",
+  "license": "MIT",
+  "copyright": "Copyright (c) 2023 Steph Ango",
+  "moods": [
+    {
+      "id": "flexoki-light",
+      "name": "Light",
+      "scheme": "light",
+      "face": "bright",
+      "colors": { "background": "#FFFCF0", "surface": "#F2F0E5", "text": "#100F0F", "muted": "#575653", "accent": "#205EA6", "accentText": "#FFFCF0", "border": "#CECDC3" }
+    },
+    {
+      "id": "flexoki-dark",
+      "name": "Dark",
+      "scheme": "dark",
+      "face": "focus",
+      "colors": { "background": "#100F0F", "surface": "#1C1B1A", "text": "#CECDC3", "muted": "#878580", "accent": "#4385BE", "accentText": "#100F0F", "border": "#403E3C" }
+    }
+  ]
+}

@@ -53,9 +53,10 @@ button.go { padding: .6em 1.1em; font: inherit; font-weight: 700; color: var(--o
 </div>
 
 <script type="module">
-// The whole integration: two lines here and the tag above.
-import { startMods } from "../../skills/moods/runtime/index.js";
-window.mods = await startMods({ contract: "./contract.json" });
+// The whole integration: two lines here and the tag above. `moods: EXAMPLES` adds every example
+// mood; without it, the app ships the four of the plugin.
+import { startMods, EXAMPLES } from "../../skills/moods/runtime/index.js";
+window.mods = await startMods({ contract: "./contract.json", moods: EXAMPLES });
 
 // The rest is the app itself.
 const tasks = [

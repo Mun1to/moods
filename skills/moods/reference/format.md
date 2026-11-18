@@ -78,9 +78,10 @@ matches.
 
 A mood can also say `"face"`: `bright`, `calm`, `focus` or `dream`, the face the panel draws on it.
 
-The plugin comes with a library of moods, grouped in families: the files in `library/`, one per
-family, each with its source and its license. `MOODS` is all of them and `moodsFrom("Moods",
-"Catppuccin")` the ones of some families, for `startMods({ contract, moods })`.
+The plugin comes with example moods, grouped in families: the files in `library/`, one per
+family, each with its source and its license. They are examples, not a fixed set. `MOODS` is the
+four of the plugin, `EXAMPLES` every example and `moodsFrom("Moods", "Catppuccin")` the ones of some
+families, for `startMods({ contract, moods })`.
 
 ### `style`: CSS against names the app promises
 

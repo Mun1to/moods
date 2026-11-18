@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The mood library</title>
+<title>Example moods</title>
 <link rel="icon" href="../../brand/icons/icon.svg">
 <style>
 /* The page's own look. It keeps its colors in seven variables, so every mood can put its own on. */
@@ -22,27 +22,23 @@ a { color: inherit; text-underline-offset: .2em; }
 button { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 
-header { display: flex; flex-wrap: wrap; gap: .8em 2.4em; align-items: center; margin-bottom: 2.4em; }
+header { display: flex; flex-wrap: wrap; gap: .8em 2.4em; align-items: center; margin-bottom: 2em; }
 .brand { display: block; height: 3em; flex: none; }
-.intro { flex: 1 1 22em; min-width: 0; }
 .brand svg { height: 100%; width: auto; display: block; }
+.intro { flex: 1 1 22em; min-width: 0; }
 .plain { padding: .55em 1em; font-weight: 700; background: var(--panel); border: 2px solid var(--line); border-radius: 6px; text-decoration: none; display: inline-block; }
 h1 { margin: 0 0 .15em; font-size: 1.9em; line-height: 1.1; font-weight: 800; letter-spacing: -.01em; }
 .lead { margin: 0; font-size: 1.1em; text-wrap: pretty; }
 
-.family { margin-bottom: 2.6em; }
-.title { display: flex; flex-wrap: wrap; gap: .1em 1.5em; align-items: baseline; justify-content: space-between; margin-bottom: .8em; }
-h2 { margin: 0; font-size: 1.6em; line-height: 1.2; font-weight: 800; }
-.title p { margin: 0; }
-
-.cards { display: flex; flex-wrap: wrap; gap: 1em; }
+.cards { display: flex; flex-wrap: wrap; gap: 1em; margin-bottom: 2.4em; }
 .card { flex: 1 1 calc((100% - (var(--columns, 4) - 1) * 1em) / var(--columns, 4)); min-width: 0; display: grid; gap: 1em; padding: 1.1em;
   text-align: start; color: var(--m-text); background: var(--m-bg); border: 2px solid var(--line); border-radius: 6px; }
 .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .top { display: flex; gap: .7em; align-items: center; }
-.top svg { height: 2.1em; width: auto; flex: none; }
-.name { font-size: 1.3em; font-weight: 800; line-height: 1.1; }
-.scheme { margin-left: auto; color: var(--m-muted); }
+.top svg { height: 2.3em; width: auto; flex: none; }
+.who { display: grid; min-width: 0; line-height: 1.2; }
+.name { font-size: 1.3em; font-weight: 800; }
+.scheme { margin-left: auto; align-self: start; color: var(--m-muted); }
 .mini { display: grid; padding: .15em .9em; background: var(--m-surface); border: 2px solid var(--m-line); border-radius: 6px; }
 .row { display: flex; gap: .65em; align-items: center; padding: .6em 0; }
 .row + .row { border-top: 1px solid var(--m-line); }
@@ -54,11 +50,16 @@ h2 { margin: 0; font-size: 1.6em; line-height: 1.2; font-weight: 800; }
 .field { flex: 1; min-width: 0; padding: .5em .8em; color: var(--m-muted); background: var(--m-surface); border: 2px solid var(--m-line); border-radius: 6px; white-space: nowrap; overflow: hidden; }
 .go { padding: .5em 1.1em; font-weight: 700; color: var(--m-on); background: var(--m-accent); border: 2px solid var(--m-accent); border-radius: 6px; }
 
-footer { display: flex; flex-wrap: wrap; gap: .8em 2em; align-items: center; justify-content: space-between; padding-top: 1.4em; border-top: 2px solid var(--line); }
-footer p { margin: 0; flex: 1 1 22em; text-wrap: pretty; }
+footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1em 2em; align-items: center; padding-top: 1.4em; border-top: 2px solid var(--line); }
+footer h2 { margin: 0 0 .2em; font-size: 1.25em; font-weight: 800; }
+footer p { margin: 0; text-wrap: pretty; }
+.from { grid-column: 1 / -1; margin: 0; padding: 0; list-style: none; columns: 22em; column-gap: 2em; }
+.from li { break-inside: avoid; padding: .15em 0; }
 @media (max-width: 620px) {
   .brand { height: 2.4em; }
   h1 { font-size: 1.6em; }
+  footer { grid-template-columns: minmax(0, 1fr); }
+  footer .plain { justify-self: start; }
 }
 </style>
 </head>
@@ -67,27 +68,31 @@ footer p { margin: 0; flex: 1 1 22em; text-wrap: pretty; }
   <header>
     <span class="brand" id="brand" role="img" aria-label="moods"></span>
     <div class="intro">
-      <h1>The mood library</h1>
+      <h1>Example moods</h1>
       <p class="lead" id="lead"></p>
     </div>
     <button class="plain" type="button" id="original" data-no-mods="way-back" hidden>Back to the page's own look</button>
   </header>
-  <main id="families"></main>
+  <main class="cards" id="cards"></main>
   <footer>
-    <p><b>Missing your favorite?</b> A family is one file, and a mood is seven colors in it. A check reads the contrast and says no to the ones that are hard to read.</p>
-    <a class="plain" href="../../CONTRIBUTING.md">Add a mood</a>
+    <div>
+      <h2>Add yours</h2>
+      <p>A family is one file, and a mood is seven colors in it. A check only asks that it reads well.</p>
+    </div>
+    <a class="plain" href="../../CONTRIBUTING.md">How to add a mood</a>
+    <ul class="from" id="from"></ul>
   </footer>
 </div>
 
 <script type="module">
-// This page is an app with the plugin, like any other: one call, and every mood of the library works on it.
-import { startMods, FAMILIES, MOODS } from "../../skills/moods/runtime/index.js";
+// This page is an app with the plugin, like any other: one call, and every example mood works on it.
+import { startMods, FAMILIES, EXAMPLES } from "../../skills/moods/runtime/index.js";
 import { FACE_BOX, faceShapes } from "../../scripts/lib/faces.mjs";
 
-const mods = await startMods({ contract: "./contract.json", mods: [] });
+const mods = await startMods({ contract: "./contract.json", mods: [], moods: EXAMPLES });
 window.mods = mods;
 const wanted = new URLSearchParams(location.search).get("mood");
-if (wanted !== null) mods.pickMood(MOODS.some((m) => m.id === wanted) ? wanted : null);
+if (wanted !== null) mods.pickMood(EXAMPLES.some((m) => m.id === wanted) ? wanted : null);
 
 const el = (tag, props = {}, ...children) => {
   const node = document.createElement(tag);
@@ -95,45 +100,43 @@ const el = (tag, props = {}, ...children) => {
   node.append(...children);
   return node;
 };
-const moodOf = (id) => JSON.parse(MOODS.find((m) => m.id === id).files["mood.json"]);
-const nameOf = (id) => MOODS.find((m) => m.id === id).manifest.name;
 const pad = 6;
 const face = (name, ink, smile) => `<svg viewBox="${-pad} ${-pad} ${FACE_BOX.width + 2 * pad} ${FACE_BOX.height + 2 * pad}" aria-hidden="true">${faceShapes(name, { ink, smile })}</svg>`;
-const short = (address) => address.replace(/^https:\/\/(www\.)?/, "").replace(/^github\.com\//, "");
+const short = (address) => address.replace("https://github.com/", "").replace("https://", "");
 
 document.getElementById("lead").innerHTML =
-  `<b>${MOODS.length} moods</b> in <b>${FAMILIES.length} families</b>, and every one works in any app that has Moods. Pick one and this page puts it on.`;
+  `<b>${EXAMPLES.length} moods</b> in <b>${FAMILIES.length} families</b>, to start from. None of them is the official one: wear one, change it or add yours.`;
 
-const cards = [];
-document.getElementById("families").append(...FAMILIES.map((family) => {
-  const row = el("div", { class: "cards" }, ...family.moods.map((id) => {
-    const mood = moodOf(id);
-    const c = mood.colors;
-    const card = el("button", { class: "card", type: "button", "data-mood": id,
-      style: `--m-bg:${c.background};--m-surface:${c.surface};--m-text:${c.text};--m-muted:${c.muted};--m-accent:${c.accent};--m-on:${c.accentText};--m-line:${c.border}` });
-    card.innerHTML = `
-      <span class="top">${face(mood.face ?? "bright", c.text, c.accent)}<span class="name"></span><span class="scheme">${mood.scheme === "dark" ? "Dark" : "Light"}</span></span>
-      <span class="mini"><span class="row"><i class="box"></i>Pick a mood</span><span class="row done"><i class="box on"></i>Put mods in my app</span></span>
-      <span class="bar"><span class="field">A new task</span><span class="go">Add</span></span>`;
-    card.querySelector(".name").textContent = nameOf(id);
-    card.addEventListener("click", () => mods.pickMood(id));
-    cards.push(card);
-    return card;
-  }));
-  const from = el("a", { href: family.source }, short(family.source));
-  const about = el("p", {}, `${family.about} From `, from, `, ${family.license}.`);
-  return el("section", { class: "family" }, el("div", { class: "title" }, el("h2", {}, family.name), about), row);
+// One card per mood, family after family: each is a small app painted with the seven colors of the mood.
+const cards = FAMILIES.flatMap((family) => family.moods.map((id) => {
+  const mod = EXAMPLES.find((m) => m.id === id);
+  const mood = JSON.parse(mod.files["mood.json"]);
+  const c = mood.colors;
+  const card = el("button", { class: "card", type: "button", "data-mood": id,
+    style: `--m-bg:${c.background};--m-surface:${c.surface};--m-text:${c.text};--m-muted:${c.muted};--m-accent:${c.accent};--m-on:${c.accentText};--m-line:${c.border}` });
+  card.innerHTML = `
+    <span class="top">${face(mood.face ?? "bright", c.text, c.accent)}<span class="who"><span class="name"></span><span class="family"></span></span><span class="scheme">${mood.scheme === "dark" ? "Dark" : "Light"}</span></span>
+    <span class="mini"><span class="row"><i class="box"></i>Pick a mood</span><span class="row done"><i class="box on"></i>Put mods in my app</span></span>
+    <span class="bar"><span class="field">A new task</span><span class="go">Add</span></span>`;
+  card.querySelector(".name").textContent = mod.manifest.name;
+  card.querySelector(".family").textContent = family.name;
+  card.addEventListener("click", () => mods.pickMood(id));
+  return card;
 }));
+const grid = document.getElementById("cards");
+grid.append(...cards);
+
+// Where the colors of each family come from, and under which license.
+document.getElementById("from").append(...FAMILIES.map((family) =>
+  el("li", {}, el("b", {}, family.name), ": ", el("a", { href: family.source }, short(family.source)), `, ${family.license}`)));
 
 // As many cards in a row as fit, and never one left alone on the last row.
 function fit() {
   const em = parseFloat(getComputedStyle(document.body).fontSize) || 17;
-  for (const row of document.querySelectorAll(".cards")) {
-    const count = row.children.length;
-    let columns = Math.max(1, Math.min(count, Math.floor((row.clientWidth + em) / (16.5 * em + em))));
-    while (columns > 1 && (count % columns === 1 || (columns === 3 && count === 4))) columns--;
-    row.style.setProperty("--columns", String(columns));
-  }
+  const count = cards.length;
+  let columns = Math.max(1, Math.min(count, Math.floor((grid.clientWidth + em) / (16.5 * em + em))));
+  while (columns > 1 && count % columns === 1) columns--;
+  grid.style.setProperty("--columns", String(columns));
 }
 new ResizeObserver(fit).observe(document.body);
 fit();
@@ -149,8 +152,9 @@ show();
 
 // The wordmark, drawn in the color of the text so it follows every mood.
 try {
-  const svg = await (await fetch("../../brand/wordmark/wordmark.svg")).text();
-  document.getElementById("brand").innerHTML = svg.replace(/<title>.*?<\/title>/, "").replaceAll("#1E1B24", "currentColor");
+  const brand = document.getElementById("brand");
+  brand.innerHTML = (await (await fetch("../../brand/wordmark/wordmark.svg")).text()).replaceAll("#1E1B24", "currentColor");
+  brand.querySelector("title")?.remove();
 } catch {
   document.getElementById("brand").textContent = "moods";
 }

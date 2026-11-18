@@ -7,6 +7,10 @@ license, checked there before the family came in.
 | --- | --- | --- | --- | --- |
 | Moods | Calm, Focus, Dream, Bright | https://github.com/Mun1to/moods | MIT | Copyright (c) 2026 Munir Torres Athayde |
 | Catppuccin | Latte, Frappé, Macchiato, Mocha | https://github.com/catppuccin/palette | MIT | Copyright (c) 2021 Catppuccin |
+| Everforest | Dark | https://github.com/sainnhe/everforest | MIT | Copyright (c) 2019 sainnhe |
+| Flexoki | Light, Dark | https://github.com/kepano/flexoki | MIT | Copyright (c) 2023 Steph Ango |
+| Kanagawa | Wave, Dragon, Lotus | https://github.com/rebelot/kanagawa.nvim | MIT | Copyright (c) 2021 Tommaso Laurenzi |
+| Rosé Pine | Main | https://github.com/rose-pine/palette | MIT | Copyright (c) mvllow |
 
 ## MIT
 
